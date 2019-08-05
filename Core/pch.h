@@ -63,5 +63,6 @@
 
 #include "Utility.h"
 #include "VectorMath.h"
+#include "Graphics/GraphicsCore.h"
 
 #endif //PCH_H

@@ -175,6 +175,8 @@
     <ClInclude Include="src\framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="src\GameCore.h" />
+    <ClInclude Include="src\Graphics\GraphicsCommon.h" />
+    <ClInclude Include="src\Graphics\GraphicsCore.h" />
     <ClInclude Include="src\Input\GameInput.h" />
     <ClInclude Include="src\Math\BoundingPlane.h" />
     <ClInclude Include="src\Math\BoundingSphere.h" />
@@ -201,6 +203,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\FileUtility.cpp" />
+    <ClCompile Include="src\GameCore.cpp" />
     <ClCompile Include="src\Input\GameInput.cpp" />
     <ClCompile Include="src\Math\Frustum.cpp" />
     <ClCompile Include="src\Math\Random.cpp" />
