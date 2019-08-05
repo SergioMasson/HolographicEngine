@@ -35,7 +35,7 @@ namespace GameCore
 #define CREATE_APPLICATION( app_class ) \
     MAIN_FUNCTION() \
     { \
-        IGameApp* app = new app_class(); \
+        GameCore::IGameApp* app = new app_class(); \
         GameCore::RunApplication( *app, L#app_class ); \
         delete app; \
         return 0; \
