@@ -14,6 +14,7 @@
 #pragma once
 
 #include "GraphicsCommon.h"
+#include "StereographicCamera.h"
 #include "pch.h"
 
 namespace Graphics
@@ -22,7 +23,12 @@ namespace Graphics
 	extern const GUID WKPDID_D3DDebugObjectName;
 #endif
 	void Initialize(void);
-	void CreateHolographicScene(winrt::Windows::UI::Core::CoreWindow const& window);
+	void AttachHolographicSpace(winrt::Windows::Graphics::Holographic::HolographicSpace const& space);
+
+	void AddHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera);
+
+	void RemoveHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera);
+
 	void Resize(uint32_t width, uint32_t height);
 	void Terminate(void);
 	void Shutdown(void);
@@ -48,6 +54,10 @@ namespace Graphics
 	extern ID3D11Device* g_Device;
 	extern winrt::agile_ref<winrt::Windows::UI::Core::CoreWindow> g_window;
 
+	// Back buffer resources, etc. for attached holographic cameras.
+	extern std::map<UINT32, std::unique_ptr<StereographicCamera>>      g_cameraResources;
+	extern std::mutex												   g_cameraResourcesLock;
+
 	//extern CommandListManager g_CommandManager;
 	//extern ContextManager g_ContextManager;
 
@@ -69,6 +79,20 @@ namespace Graphics
 
 	//extern BoolVar s_EnableVSync;
 	//extern EnumVar TargetResolution;
+
+	// Device-based resources for holographic cameras are stored in a std::map. Access this list by providing a
+	// callback to this function, and the std::map will be guarded from add and remove
+	// events until the callback returns. The callback is processed immediately and must
+	// not contain any nested calls to UseHolographicCameraResources.
+	// The callback takes a parameter of type std::map<UINT32, std::unique_ptr<DX::CameraResources>>&
+	// through which the list of cameras will be accessed.
+	template<typename RetType, typename LCallback>
+	RetType UseHolographicCameraResources(const LCallback& callback)
+	{
+		std::lock_guard<std::mutex> guard(m_cameraResourcesLock);
+		return callback(m_cameraResources);
+	}
+
 
 #if defined(_DEBUG)
 // Check for SDK Layer support.

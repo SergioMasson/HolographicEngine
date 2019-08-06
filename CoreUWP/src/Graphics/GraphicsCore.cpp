@@ -24,29 +24,28 @@ namespace
 
 D3D_FEATURE_LEVEL g_D3DFeatureLevel = D3D_FEATURE_LEVEL_11_0;
 
-ComPtr<ID3D11Device>                   m_d3dDevice;
-ComPtr<ID3D11DeviceContext>            m_d3dContext;
-ComPtr<IDXGIAdapter>                   m_dxgiAdapter;
+ComPtr<ID3D11Device>                   g_d3dDevice;
+ComPtr<ID3D11DeviceContext>            g_d3dContext;
+ComPtr<IDXGIAdapter>                   g_dxgiAdapter;
 
 // Direct2D factories.
-ComPtr<ID2D1Factory>                   m_d2dFactory;
-ComPtr<IDWriteFactory>                 m_dwriteFactory;
+ComPtr<ID2D1Factory>                   g_d2dFactory;
+ComPtr<IDWriteFactory>                 g_dwriteFactory;
 
-bool									m_supportsVprt;
+bool								   g_supportsVprt;
 
 // The holographic space provides a preferred DXGI adapter ID.
 HolographicSpace m_holographicSpace = nullptr;
 
-// Camera that will render to Hololens Device directly.
-std::shared_ptr<StereographicCamera>	m_mainCamera;
-
-// Direct3D interop objects.
+// Back buffer resources, etc. for attached holographic cameras.
+std::map<UINT32, std::unique_ptr<StereographicCamera>>      g_cameraResources;
+std::mutex												   g_cameraResourcesLock;
 
 winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice m_d3dInteropDevice;
 
 void OnCameraAddedHandler(HolographicSpace const& space, HolographicSpaceCameraAddedEventArgs const& e)
 {
-	m_mainCamera = std::shared_ptr<StereographicCamera>(new StereographicCamera(e.Camera()));
+	//m_mainCamera = std::shared_ptr<StereographicCamera>(new StereographicCamera(e.Camera()));
 }
 
 void OnCameraRemovedHandler(HolographicSpace const& space, HolographicSpaceCameraRemovedEventArgs const& e) 
@@ -65,10 +64,10 @@ void CreateDeviceIndependetResources()
 #endif
 
 	// Initialize the Direct2D Factory.
-	winrt::check_hresult(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory2), &options, &m_d2dFactory));
+	winrt::check_hresult(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory2), &options, &g_d2dFactory));
 
 	// Initialize the DirectWrite Factory.
-	winrt::check_hresult(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory2), &m_dwriteFactory));
+	winrt::check_hresult(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory2), &g_dwriteFactory));
 }
 
 //Create ID3D11Device and ID3D11DeviceContext
@@ -102,19 +101,19 @@ void CreateDeviceResources()
 
 	// Create the Direct3D 11 API device object and a corresponding context.
 
-	D3D_DRIVER_TYPE driverType = m_dxgiAdapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN;
+	D3D_DRIVER_TYPE driverType = g_dxgiAdapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN;
 
 	HRESULT hr = D3D11CreateDevice(
-		m_dxgiAdapter.Get(),        // Either nullptr, or the primary adapter determined by Windows Holographic.
+		g_dxgiAdapter.Get(),        // Either nullptr, or the primary adapter determined by Windows Holographic.
 		driverType,                 // Create a device using the hardware graphics driver.
 		0,                          // Should be 0 unless the driver is D3D_DRIVER_TYPE_SOFTWARE.
 		creationFlags,              // Set debug and Direct2D compatibility flags.
 		featureLevels,              // List of feature levels this app can support.
 		ARRAYSIZE(featureLevels),   // Size of the list above.
 		D3D11_SDK_VERSION,          // Always set this to D3D11_SDK_VERSION for Windows Runtime apps.
-		&m_d3dDevice,                    // Returns the Direct3D device created.
+		&g_d3dDevice,                    // Returns the Direct3D device created.
 		&g_D3DFeatureLevel,         // Returns feature level of device created.
-		&m_d3dContext                    // Returns the device immediate context.
+		&g_d3dContext                    // Returns the device immediate context.
 	);
 
 	if (FAILED(hr))
@@ -131,15 +130,15 @@ void CreateDeviceResources()
 				featureLevels,
 				ARRAYSIZE(featureLevels),
 				D3D11_SDK_VERSION,
-				&m_d3dDevice,
+				&g_d3dDevice,
 				&g_D3DFeatureLevel,
-				&m_d3dContext
+				&g_d3dContext
 			));
 	}
 
 	// Acquire the DXGI interface for the Direct3D device.
 	ComPtr<IDXGIDevice> dxgiDevice;
-	winrt::check_hresult(m_d3dDevice.As(&dxgiDevice));
+	winrt::check_hresult(g_d3dDevice.As(&dxgiDevice));
 
 	// Wrap the native device using a WinRT interop object.
 	winrt::com_ptr<::IInspectable> object;
@@ -151,14 +150,14 @@ void CreateDeviceResources()
 	// This is for the case of no preferred DXGI adapter, or fallback to WARP.
 	ComPtr<IDXGIAdapter> dxgiAdapter;
 	winrt::check_hresult(dxgiDevice->GetAdapter(&dxgiAdapter));
-	winrt::check_hresult(dxgiAdapter.As(&m_dxgiAdapter));
+	winrt::check_hresult(dxgiAdapter.As(&g_dxgiAdapter));
 
 	// Check for device support for the optional feature that allows setting the render target array index from the vertex shader stage.
 	D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
-	m_d3dDevice->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof(options));
+	g_d3dDevice->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof(options));
 
 	if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
-		m_supportsVprt = true;
+		g_supportsVprt = true;
 }
 
 void Graphics::Initialize(void)
@@ -170,12 +169,11 @@ void Graphics::Initialize(void)
 	CreateDeviceResources();
 }
 
-void Graphics::CreateHolographicScene(winrt::Windows::UI::Core::CoreWindow const& window)
+void Graphics::AttachHolographicSpace(HolographicSpace const& space)
 {
 	//Create a Holographic space for this window.
-	m_holographicSpace = HolographicSpace::CreateForCoreWindow(window);
 
-	m_holographicSpace.SetDirect3D11Device(m_d3dInteropDevice);
+	space.SetDirect3D11Device(m_d3dInteropDevice);
 
 	m_holographicSpace.CameraAdded(std::bind(OnCameraAddedHandler, _1, _2));
 	m_holographicSpace.CameraRemoved(std::bind(OnCameraRemovedHandler, _1, _2));

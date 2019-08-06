@@ -18,6 +18,8 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Composition;
+using namespace winrt::Windows::Graphics::Holographic;
+using namespace winrt::Windows::Perception::Spatial;
 using namespace std::placeholders;
 using namespace winrt;
 
@@ -140,10 +142,33 @@ namespace GameCore
 		void OnKeyDown(CoreWindow const& sender, KeyEventArgs const& args);
 		void OnKeyUp(CoreWindow const& sender, KeyEventArgs const& args);
 #endif
+		//Holographic Space events
+
+		// Asynchronously creates resources for new holographic cameras.
+		void OnCameraAdded(HolographicSpace const& sender, HolographicSpaceCameraAddedEventArgs const& args);
+
+		// Synchronously releases resources for holographic cameras that are no longer
+		// attached to the system.
+		void OnCameraRemoved(HolographicSpace const& sender, HolographicSpaceCameraRemovedEventArgs const& args);
+
+		// Used to notify the app when the positional tracking state changes.
+		void OnLocatabilityChanged(SpatialLocator const& sender, IInspectable const& args);
+
+		// Used to respond to changes to the default spatial locator.
+		void OnHolographicDisplayIsAvailableChanged(IInspectable const&, IInspectable const&);
+
 
 	private:
 		bool m_windowClosed;
 		bool m_windowVisible;
+		bool m_canGetDefaultHolographicDisplay		= false;
+		bool m_canGetHolographicDisplayForCamera	= false;
+		bool m_canCommitDirect3D11DepthBuffer		= false;
+
+		std::shared_ptr<HolographicSpace>					m_holographicSpace = nullptr;
+		std::shared_ptr<SpatialLocator>						m_spatialLocator = nullptr;
+		std::shared_ptr<SpatialStationaryFrameOfReference>	m_stationaryReferenceFrame = nullptr;
+		
 		volatile bool m_IsRunning;
 		volatile bool m_IsCapturingPointer;
 		float m_PointerX, m_PointerY;
@@ -153,6 +178,10 @@ namespace GameCore
 	void App::Initialize(CoreApplicationView const& applicationView)
 	{
 		applicationView.Activated(std::bind(&App::OnActivated, this, _1, _2));
+
+		m_canGetHolographicDisplayForCamera = winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(L"Windows.Graphics.Holographic.HolographicCamera", L"Display");
+		m_canGetDefaultHolographicDisplay = winrt::Windows::Foundation::Metadata::ApiInformation::IsMethodPresent(L"Windows.Graphics.Holographic.HolographicDisplay", L"GetDefault");
+		m_canCommitDirect3D11DepthBuffer = winrt::Windows::Foundation::Metadata::ApiInformation::IsMethodPresent(L"Windows.Graphics.Holographic.HolographicCameraRenderingParameters", L"CommitDirect3D11DepthBuffer");
 	}
 
 	// Called when we are provided a window.
@@ -162,8 +191,16 @@ namespace GameCore
 		//     CoreWindow::GetForCurrentThread()
 		g_window = window;
 
+		m_holographicSpace = std::make_shared<HolographicSpace>(HolographicSpace::CreateForCoreWindow(window));
+
 		//Holographic Space can only be created after the app has a CoreWindow.
-		Graphics::CreateHolographicScene(window);
+		Graphics::AttachHolographicSpace(*m_holographicSpace);
+
+		m_holographicSpace->CameraAdded(std::bind(&App::OnCameraAdded, this, _1, _2));
+		m_holographicSpace->CameraRemoved(std::bind(&App::OnCameraRemoved, this, _1, _2));
+		HolographicSpace::IsAvailableChanged(std::bind(&App::OnHolographicDisplayIsAvailableChanged, this, _1, _2));
+
+		OnHolographicDisplayIsAvailableChanged(nullptr, nullptr);
 
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_TV_TITLE)
 		window.SizeChanged(std::bind(&App::OnWindowSizeChanged, this, _1, _2));
@@ -268,6 +305,119 @@ namespace GameCore
 	{
 		GameInput::SetKeyState(args.VirtualKey(), false);
 	}
+
+// Holographic API callback ----------------------------
+
+	void App::OnCameraAdded(HolographicSpace const & sender, HolographicSpaceCameraAddedEventArgs const & args)
+	{
+		winrt::Windows::Foundation::Deferral const& deferral = args.GetDeferral();
+		HolographicCamera const& holographicCamera = args.Camera();
+
+		concurrency::create_task([this, deferral, holographicCamera]()
+		{
+			//
+			// TODO: Allocate resources for the new camera and load any content specific to
+			//       that camera. Note that the render target size (in pixels) is a property
+			//       of the HolographicCamera object, and can be used to create off-screen
+			//       render targets that match the resolution of the HolographicCamera.
+			//
+
+			// Create device-based resources for the holographic camera and add it to the list of
+			// cameras used for updates and rendering. Notes:
+			//   * Since this function may be called at any time, the AddHolographicCamera function
+			//     waits until it can get a lock on the set of holographic camera resources before
+			//     adding the new camera. At 60 frames per second this wait should not take long.
+			//   * A subsequent Update will take the back buffer from the RenderingParameters of this
+			//     camera's CameraPose and use it to create the ID3D11RenderTargetView for this camera.
+			//     Content can then be rendered for the HolographicCamera.
+			Graphics::AddHolographicCamera(holographicCamera);
+
+			// Holographic frame predictions will not include any information about this camera until
+			// the deferral is completed.
+			deferral.Complete();
+		});
+	}
+
+	void App::OnCameraRemoved(HolographicSpace const & sender, HolographicSpaceCameraRemovedEventArgs const & args)
+	{
+		Graphics::RemoveHolographicCamera(args.Camera());
+	}
+
+	void App::OnLocatabilityChanged(SpatialLocator const & sender, IInspectable const & args)
+	{
+		switch (sender.Locatability)
+		{
+		case SpatialLocatability::Unavailable:
+			// Holograms cannot be rendered.
+		{
+			Utility::Printf(L"Warning! Positional tracking is " +
+				sender.Locatability.ToString() + L".\n");
+		}
+		break;
+
+		// In the following three cases, it is still possible to place holograms using a
+		// SpatialLocatorAttachedFrameOfReference.
+		case SpatialLocatability::PositionalTrackingActivating:
+			// The system is preparing to use positional tracking.
+
+		case SpatialLocatability::OrientationOnly:
+			// Positional tracking has not been activated.
+
+		case SpatialLocatability::PositionalTrackingInhibited:
+			// Positional tracking is temporarily inhibited. User action may be required
+			// in order to restore positional tracking.
+			break;
+
+		case SpatialLocatability::PositionalTrackingActive:
+			// Positional tracking is active. World-locked content can be rendered.
+			break;
+		}
+	}
+
+	void App::OnHolographicDisplayIsAvailableChanged(IInspectable const &, IInspectable const &)
+	{
+		// Get the spatial locator for the default HolographicDisplay, if one is available.
+		SpatialLocator* spatialLocator = nullptr;
+
+		if (m_canGetDefaultHolographicDisplay)
+		{
+			HolographicDisplay defaultHolographicDisplay = HolographicDisplay::GetDefault();
+
+			if (defaultHolographicDisplay)
+				spatialLocator = &defaultHolographicDisplay.SpatialLocator();
+		}
+		else
+		{
+			spatialLocator = &SpatialLocator::GetDefault();
+		}
+
+		if (m_spatialLocator.get() != spatialLocator)
+		{
+			// If the spatial locator is disconnected or replaced, we should discard all state that was
+			// based on it.
+			if (m_spatialLocator != nullptr)
+			{
+				//TODO: Do we need to unbind ?
+				m_spatialLocator = nullptr;
+			}
+
+			m_stationaryReferenceFrame = nullptr;
+
+			if (spatialLocator != nullptr)
+			{
+				// Use the SpatialLocator from the default HolographicDisplay to track the motion of the device.
+				m_spatialLocator = std::make_shared<SpatialLocator>(spatialLocator);
+
+				m_spatialLocator->LocatabilityChanged(std::bind(&App::OnLocatabilityChanged, this, _1, _2));
+
+				// The simplest way to render world-locked holograms is to create a stationary reference frame
+				// based on a SpatialLocator. This is roughly analogous to creating a "world" coordinate system
+				// with the origin placed at the device's position as the app is launched.
+				m_stationaryReferenceFrame = std::make_shared<SpatialStationaryFrameOfReference>(m_spatialLocator->CreateStationaryFrameOfReferenceAtCurrentLocation());
+			}
+		}
+	}
+// ------------------------------------------------------------------------
 
 	void RunApplication(IGameApp& app, const wchar_t* className)
 	{
