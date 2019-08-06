@@ -15,6 +15,13 @@ namespace GameCore
 	extern winrt::agile_ref<winrt::Windows::UI::Core::CoreWindow> g_window;
 }
 
+namespace 
+{
+	float s_FrameTime = 0.0f;
+	uint64_t s_FrameIndex = 0;
+	int64_t s_FrameStartTick = 0;
+}
+
 D3D_FEATURE_LEVEL g_D3DFeatureLevel = D3D_FEATURE_LEVEL_11_0;
 
 ComPtr<ID3D11Device>                   m_d3dDevice;
@@ -22,8 +29,8 @@ ComPtr<ID3D11DeviceContext>            m_d3dContext;
 ComPtr<IDXGIAdapter>                   m_dxgiAdapter;
 
 // Direct2D factories.
-ComPtr<ID2D1Factory2>                   m_d2dFactory;
-ComPtr<IDWriteFactory2>                 m_dwriteFactory;
+ComPtr<ID2D1Factory>                   m_d2dFactory;
+ComPtr<IDWriteFactory>                 m_dwriteFactory;
 
 bool									m_supportsVprt;
 
@@ -94,8 +101,6 @@ void CreateDeviceResources()
 	};
 
 	// Create the Direct3D 11 API device object and a corresponding context.
-	ComPtr<ID3D11Device> device;
-	ComPtr<ID3D11DeviceContext> context;
 
 	D3D_DRIVER_TYPE driverType = m_dxgiAdapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN;
 
@@ -107,9 +112,9 @@ void CreateDeviceResources()
 		featureLevels,              // List of feature levels this app can support.
 		ARRAYSIZE(featureLevels),   // Size of the list above.
 		D3D11_SDK_VERSION,          // Always set this to D3D11_SDK_VERSION for Windows Runtime apps.
-		&device,                    // Returns the Direct3D device created.
+		&m_d3dDevice,                    // Returns the Direct3D device created.
 		&g_D3DFeatureLevel,         // Returns feature level of device created.
-		&context                    // Returns the device immediate context.
+		&m_d3dContext                    // Returns the device immediate context.
 	);
 
 	if (FAILED(hr))
@@ -126,23 +131,19 @@ void CreateDeviceResources()
 				featureLevels,
 				ARRAYSIZE(featureLevels),
 				D3D11_SDK_VERSION,
-				&device,
+				&m_d3dDevice,
 				&g_D3DFeatureLevel,
-				&context
+				&m_d3dContext
 			));
 	}
 
-	// Store pointers to the Direct3D device and immediate context.
-	winrt::check_hresult(device.As(&m_d3dDevice));
-	winrt::check_hresult(context.As(&m_d3dContext));
-
 	// Acquire the DXGI interface for the Direct3D device.
-	ComPtr<IDXGIDevice3> dxgiDevice;
+	ComPtr<IDXGIDevice> dxgiDevice;
 	winrt::check_hresult(m_d3dDevice.As(&dxgiDevice));
 
 	// Wrap the native device using a WinRT interop object.
 	winrt::com_ptr<::IInspectable> object;
-	winrt::check_hresult(CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.Get(), reinterpret_cast<IInspectable * *>(winrt::put_abi(object))));
+	winrt::check_hresult(CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.Get(), reinterpret_cast<IInspectable **>(winrt::put_abi(object))));
 
 	m_d3dInteropDevice = object.as<IDirect3DDevice>();
 
@@ -195,14 +196,27 @@ void Graphics::Shutdown(void)
 	//Implement resource release.
 }
 
+void Graphics::Present() 
+{
+	int64_t CurrentTick = SystemTime::GetCurrentTick();
+
+	//TODO: Add Camera present logic.
+
+	
+	s_FrameTime = (float)SystemTime::TimeBetweenTicks(s_FrameStartTick, CurrentTick);
+
+	s_FrameStartTick = CurrentTick;
+	++s_FrameIndex;
+}
+
 uint64_t Graphics::GetFrameCount(void)
 {
-	return uint64_t();
+	return s_FrameIndex;
 }
 
 float Graphics::GetFrameTime(void)
 {
-	return 0.0f;
+	return s_FrameTime == 0.0f ? 0.0f : 1.0f / s_FrameTime;
 }
 
 float Graphics::GetFrameRate(void)

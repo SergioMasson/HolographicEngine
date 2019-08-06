@@ -57,13 +57,13 @@ namespace GameCore
 		return true;
 		//	EngineProfiling::Update();
 
-		//	float DeltaTime = Graphics::GetFrameTime();
+		float DeltaTime = Graphics::GetFrameTime();
 
-		//	GameInput::Update(DeltaTime);
+		GameInput::Update(DeltaTime);
 		//	EngineTuning::Update(DeltaTime);
 
-		//	game.Update(DeltaTime);
-		//	game.RenderScene();
+		game.Update(DeltaTime);
+		game.RenderScene();
 
 		//	PostEffects::Render();
 
@@ -88,15 +88,14 @@ namespace GameCore
 		//	UiContext.ClearColor(g_OverlayBuffer);
 		//	UiContext.SetRenderTarget(g_OverlayBuffer.GetRTV());
 		//	UiContext.SetViewportAndScissor(0, 0, g_OverlayBuffer.GetWidth(), g_OverlayBuffer.GetHeight());
-		//	game.RenderUI(UiContext);
+		//game.RenderUI(UiContext);
 
 		//	EngineTuning::Display(UiContext, 10.0f, 40.0f, 1900.0f, 1040.0f);
 
 		//	UiContext.Finish();
 
-		//	Graphics::Present();
-
-		//	return !game.IsDone();
+		Graphics::Present();
+		return !game.IsDone();
 	}
 
 	// Default implementation to be overridden by the application

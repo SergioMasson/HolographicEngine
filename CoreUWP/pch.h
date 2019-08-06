@@ -61,5 +61,6 @@
 
 #include "Utility.h"
 #include "VectorMath.h"
+#include "SystemTime.h"
 #include "Graphics/GraphicsCore.h"
 #include <windows.h>
