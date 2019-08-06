@@ -164,7 +164,7 @@ namespace GameCore
 		g_window = window;
 
 		//Holographic Space can only be created after the app has a CoreWindow.
-		Graphics::CreateHolographicScene();
+		Graphics::CreateHolographicScene(window);
 
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_TV_TITLE)
 		window.SizeChanged(std::bind(&App::OnWindowSizeChanged, this, _1, _2));

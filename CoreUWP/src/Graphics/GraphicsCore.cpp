@@ -5,11 +5,13 @@
 using namespace Math;
 using namespace DirectX;
 using namespace Microsoft::WRL;
+using namespace std::placeholders;
 using namespace winrt::Windows::Graphics::Holographic;
 using namespace winrt::Windows::Graphics::DirectX::Direct3D11;
 
 namespace GameCore
 {
+	//TODO: Do we really need this ?
 	extern winrt::agile_ref<winrt::Windows::UI::Core::CoreWindow> g_window;
 }
 
@@ -35,6 +37,16 @@ std::shared_ptr<StereographicCamera>	m_mainCamera;
 
 winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice m_d3dInteropDevice;
 
+void OnCameraAddedHandler(HolographicSpace const& space, HolographicSpaceCameraAddedEventArgs const& e)
+{
+	m_mainCamera = std::shared_ptr<StereographicCamera>(new StereographicCamera(e.Camera()));
+}
+
+void OnCameraRemovedHandler(HolographicSpace const& space, HolographicSpaceCameraRemovedEventArgs const& e) 
+{
+	//TODO: Handle case where more camera will be created.
+}
+
 void CreateDeviceIndependetResources() 
 {
 	// Initialize Direct2D resources.
@@ -50,9 +62,6 @@ void CreateDeviceIndependetResources()
 
 	// Initialize the DirectWrite Factory.
 	winrt::check_hresult(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory2), &m_dwriteFactory));
-
-	// Initialize the Windows Imaging Component (WIC) Factory.
-	winrt::check_hresult(CoCreateInstance(CLSID_WICImagingFactory2, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_wicFactory)));
 }
 
 //Create ID3D11Device and ID3D11DeviceContext
@@ -153,17 +162,50 @@ void CreateDeviceResources()
 
 void Graphics::Initialize(void)
 {
-	//Create media foundation classes and Direct Sound.
+	//Initialize Direct2D and IDWrite.
 	CreateDeviceIndependetResources();
 
-	//Create Direct
+	//Create DeviceContext and ID3DDevice
 	CreateDeviceResources();
 }
 
-void Graphics::CreateHolographicScene() 
+void Graphics::CreateHolographicScene(winrt::Windows::UI::Core::CoreWindow const& window)
 {
 	//Create a Holographic space for this window.
-	m_holographicSpace = HolographicSpace::CreateForCoreWindow(g_window.get());
+	m_holographicSpace = HolographicSpace::CreateForCoreWindow(window);
 
 	m_holographicSpace.SetDirect3D11Device(m_d3dInteropDevice);
+
+	m_holographicSpace.CameraAdded(std::bind(OnCameraAddedHandler, _1, _2));
+	m_holographicSpace.CameraRemoved(std::bind(OnCameraRemovedHandler, _1, _2));
+}
+
+void Graphics::Resize(uint32_t width, uint32_t height)
+{
+	//TODO: Add resize logic (if needed.)
+}
+
+void Graphics::Terminate(void)
+{
+	//TODO: Implement resource release.
+}
+
+void Graphics::Shutdown(void)
+{
+	//Implement resource release.
+}
+
+uint64_t Graphics::GetFrameCount(void)
+{
+	return uint64_t();
+}
+
+float Graphics::GetFrameTime(void)
+{
+	return 0.0f;
+}
+
+float Graphics::GetFrameRate(void)
+{
+	return 0.0f;
 }

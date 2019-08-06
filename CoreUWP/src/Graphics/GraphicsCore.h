@@ -22,7 +22,7 @@ namespace Graphics
 	extern const GUID WKPDID_D3DDebugObjectName;
 #endif
 	void Initialize(void);
-	void CreateHolographicScene();
+	void CreateHolographicScene(winrt::Windows::UI::Core::CoreWindow const& window);
 	void Resize(uint32_t width, uint32_t height);
 	void Terminate(void);
 	void Shutdown(void);
