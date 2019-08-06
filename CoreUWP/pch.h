@@ -23,6 +23,7 @@
 #include <winrt/Windows.UI.Input.Spatial.h>
 #include <Windows.Graphics.Directx.Direct3D11.Interop.h>
 #include <wrl/client.h>
+#include <dxgi.h>
 
 #define SSE2  //indicates we want SSE2
 #define SSE41 //indicates we want SSE4.1 instructions (floor and blend is available)

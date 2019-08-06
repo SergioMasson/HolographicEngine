@@ -1,15 +1,9 @@
-//
 // Copyright (c) Microsoft. All rights reserved.
 // This code is licensed under the MIT License (MIT).
 // THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
 // IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
 // PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-// Developed by Minigraph
-//
-// Author:  James Stanard
-//
 
 #include "pch.h"
 #include "GameCore.h"
@@ -60,6 +54,7 @@ namespace GameCore
 
 	bool UpdateApplication(IGameApp& game)
 	{
+		return true;
 		//	EngineProfiling::Update();
 
 		//	float DeltaTime = Graphics::GetFrameTime();
@@ -167,6 +162,10 @@ namespace GameCore
 		// We record the window pointer now, but you can also call this function to retrieve it:
 		//     CoreWindow::GetForCurrentThread()
 		g_window = window;
+
+		//Holographic Space can only be created after the app has a CoreWindow.
+		Graphics::CreateHolographicScene();
+
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_TV_TITLE)
 		window.SizeChanged(std::bind(&App::OnWindowSizeChanged, this, _1, _2));
 		window.VisibilityChanged(std::bind(&App::OnVisibilityChanged, this, _1, _2));

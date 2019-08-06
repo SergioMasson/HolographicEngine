@@ -16,6 +16,8 @@
     <ClCompile Include="src\Math\Frustum.cpp" />
     <ClCompile Include="src\Math\Random.cpp" />
     <ClCompile Include="src\Input\GameInput.cpp" />
+    <ClCompile Include="src\Graphics\GraphicsCore.cpp" />
+    <ClCompile Include="src\Graphics\StereographicCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -41,5 +43,9 @@
     <ClInclude Include="src\Input\GameInput.h" />
     <ClInclude Include="src\Graphics\GraphicsCommon.h" />
     <ClInclude Include="src\Graphics\GraphicsCore.h" />
+    <ClInclude Include="src\Graphics\StereographicCamera.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
