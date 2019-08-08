@@ -80,5 +80,5 @@ private:
 	bool                                                        m_framePending = false;
 
 	// Pointer to the holographic camera these resources are for.
-	winrt::Windows::Graphics::Holographic::HolographicCamera    m_holographicCamera = nullptr;
+	winrt::Windows::Graphics::Holographic::HolographicCamera    m_holographicCamera{ nullptr };
 };

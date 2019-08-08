@@ -8,7 +8,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="src\Core.cpp" />
     <ClCompile Include="src\FileUtility.cpp" />
     <ClCompile Include="src\GameCore.cpp" />
     <ClCompile Include="src\SystemTime.cpp" />

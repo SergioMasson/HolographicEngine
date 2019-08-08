@@ -39,12 +39,16 @@ namespace GameCore
 
 	const bool TestGenerateMips = false;
 
-	void InitializeApplication(IGameApp& game)
+	void LoadApplication(IGameApp& game)
 	{
 		//TODO(Sergio): Implement graphics stuff.
 		Graphics::Initialize();
 		SystemTime::Initialize();
 		GameInput::Initialize();
+	}
+
+	void InitializeApplication(IGameApp& game)
+	{
 		game.Startup();
 	}
 
@@ -54,18 +58,38 @@ namespace GameCore
 		GameInput::Shutdown();
 	}
 
-	bool UpdateApplication(IGameApp& game)
+	bool UpdateApplication(IGameApp& game, HolographicSpace const& space, SpatialStationaryFrameOfReference const& reference)
 	{
-		return true;
 		//	EngineProfiling::Update();
-
 		float DeltaTime = Graphics::GetFrameTime();
 
 		GameInput::Update(DeltaTime);
 		//	EngineTuning::Update(DeltaTime);
 
 		game.Update(DeltaTime);
-		game.RenderScene();
+
+		// Before doing the timer update, there is some work to do per-frame
+		// to maintain holographic rendering. First, we will get information
+		// about the current frame.
+
+		// The HolographicFrame has information that the app needs in order
+		// to update and render the current frame. The app begins each new
+		// frame by calling CreateNextFrame.
+		HolographicFrame holographicFrame = space.CreateNextFrame();
+
+		// Get a prediction of where holographic cameras will be when this frame
+		// is presented.
+		HolographicFramePrediction prediction = holographicFrame.CurrentPrediction();
+
+		// Back buffers can change from frame to frame. Validate each buffer, and recreate
+		// resource views and depth buffers as needed.
+		Graphics::EnsureHolographicCameraResources(holographicFrame, prediction);
+
+		if (Graphics::Render(game, holographicFrame, reference))
+		{
+			Graphics::Present(holographicFrame);
+		}
+
 
 		//	PostEffects::Render();
 
@@ -96,7 +120,6 @@ namespace GameCore
 
 		//	UiContext.Finish();
 
-		Graphics::Present();
 		return !game.IsDone();
 	}
 
@@ -165,9 +188,10 @@ namespace GameCore
 		bool m_canGetHolographicDisplayForCamera	= false;
 		bool m_canCommitDirect3D11DepthBuffer		= false;
 
-		std::shared_ptr<HolographicSpace>					m_holographicSpace = nullptr;
-		std::shared_ptr<SpatialLocator>						m_spatialLocator = nullptr;
-		std::shared_ptr<SpatialStationaryFrameOfReference>	m_stationaryReferenceFrame = nullptr;
+		//Windows runtime object are just a reference to the actual object itself. They can be copied!
+		HolographicSpace					m_holographicSpace{ nullptr };
+		SpatialLocator						m_spatialLocator{ nullptr };
+		SpatialStationaryFrameOfReference	m_stationaryReferenceFrame{ nullptr };
 		
 		volatile bool m_IsRunning;
 		volatile bool m_IsCapturingPointer;
@@ -191,13 +215,18 @@ namespace GameCore
 		//     CoreWindow::GetForCurrentThread()
 		g_window = window;
 
-		m_holographicSpace = std::make_shared<HolographicSpace>(HolographicSpace::CreateForCoreWindow(window));
+		LoadApplication(*m_game);
+
+		m_holographicSpace = HolographicSpace::CreateForCoreWindow(window);
+
+		//m_holographicSpace = std::shared_ptr<HolographicSpace>(&HolographicSpace::CreateForCoreWindow(window));
 
 		//Holographic Space can only be created after the app has a CoreWindow.
-		Graphics::AttachHolographicSpace(*m_holographicSpace);
+		Graphics::AttachHolographicSpace(m_holographicSpace);
 
-		m_holographicSpace->CameraAdded(std::bind(&App::OnCameraAdded, this, _1, _2));
-		m_holographicSpace->CameraRemoved(std::bind(&App::OnCameraRemoved, this, _1, _2));
+		m_holographicSpace.CameraAdded(std::bind(&App::OnCameraAdded, this, _1, _2));
+		m_holographicSpace.CameraRemoved(std::bind(&App::OnCameraRemoved, this, _1, _2));
+
 		HolographicSpace::IsAvailableChanged(std::bind(&App::OnHolographicDisplayIsAvailableChanged, this, _1, _2));
 
 		OnHolographicDisplayIsAvailableChanged(nullptr, nullptr);
@@ -226,7 +255,7 @@ namespace GameCore
 			// ProcessEvents will throw if the process is exiting, allowing us to break out of the loop.  This will be
 			// cleaned up when we get proper process lifetime management in a future release.
 			g_window.get().Dispatcher().ProcessEvents(CoreProcessEventsOption::ProcessAllIfPresent);
-			m_IsRunning = UpdateApplication(*m_game);
+			m_IsRunning = UpdateApplication(*m_game, m_holographicSpace, m_stationaryReferenceFrame);
 		}
 	}
 
@@ -310,10 +339,10 @@ namespace GameCore
 
 	void App::OnCameraAdded(HolographicSpace const & sender, HolographicSpaceCameraAddedEventArgs const & args)
 	{
-		winrt::Windows::Foundation::Deferral const& deferral = args.GetDeferral();
-		HolographicCamera const& holographicCamera = args.Camera();
+		winrt::Windows::Foundation::Deferral deferral = args.GetDeferral();
+		HolographicCamera holographicCamera = args.Camera();
 
-		concurrency::create_task([this, deferral, holographicCamera]()
+		concurrency::create_task([this, deferral,  holographicCamera]()
 		{
 			//
 			// TODO: Allocate resources for the new camera and load any content specific to
@@ -345,13 +374,13 @@ namespace GameCore
 
 	void App::OnLocatabilityChanged(SpatialLocator const & sender, IInspectable const & args)
 	{
-		switch (sender.Locatability)
+		switch (sender.Locatability())
 		{
+
+		// Holograms cannot be rendered.
 		case SpatialLocatability::Unavailable:
-			// Holograms cannot be rendered.
 		{
-			Utility::Printf(L"Warning! Positional tracking is " +
-				sender.Locatability.ToString() + L".\n");
+			Utility::Printf(L"Warning! Positional tracking is SpatialLocatability::Unavailable \n");
 		}
 		break;
 
@@ -377,21 +406,21 @@ namespace GameCore
 	void App::OnHolographicDisplayIsAvailableChanged(IInspectable const &, IInspectable const &)
 	{
 		// Get the spatial locator for the default HolographicDisplay, if one is available.
-		SpatialLocator* spatialLocator = nullptr;
+		SpatialLocator spatialLocator{ nullptr };
 
 		if (m_canGetDefaultHolographicDisplay)
 		{
 			HolographicDisplay defaultHolographicDisplay = HolographicDisplay::GetDefault();
 
 			if (defaultHolographicDisplay)
-				spatialLocator = &defaultHolographicDisplay.SpatialLocator();
+				spatialLocator = defaultHolographicDisplay.SpatialLocator();
 		}
 		else
 		{
-			spatialLocator = &SpatialLocator::GetDefault();
+			spatialLocator = SpatialLocator::GetDefault();
 		}
 
-		if (m_spatialLocator.get() != spatialLocator)
+		if (m_spatialLocator != spatialLocator)
 		{
 			// If the spatial locator is disconnected or replaced, we should discard all state that was
 			// based on it.
@@ -406,14 +435,14 @@ namespace GameCore
 			if (spatialLocator != nullptr)
 			{
 				// Use the SpatialLocator from the default HolographicDisplay to track the motion of the device.
-				m_spatialLocator = std::make_shared<SpatialLocator>(spatialLocator);
+				m_spatialLocator = spatialLocator;
 
-				m_spatialLocator->LocatabilityChanged(std::bind(&App::OnLocatabilityChanged, this, _1, _2));
+				m_spatialLocator.LocatabilityChanged(std::bind(&App::OnLocatabilityChanged, this, _1, _2));
 
-				// The simplest way to render world-locked holograms is to create a stationary reference frame
-				// based on a SpatialLocator. This is roughly analogous to creating a "world" coordinate system
-				// with the origin placed at the device's position as the app is launched.
-				m_stationaryReferenceFrame = std::make_shared<SpatialStationaryFrameOfReference>(m_spatialLocator->CreateStationaryFrameOfReferenceAtCurrentLocation());
+			//	// The simplest way to render world-locked holograms is to create a stationary reference frame
+			//	// based on a SpatialLocator. This is roughly analogous to creating a "world" coordinate system
+			//	// with the origin placed at the device's position as the app is launched.
+				m_stationaryReferenceFrame = m_spatialLocator.CreateStationaryFrameOfReferenceAtCurrentLocation();
 			}
 		}
 	}

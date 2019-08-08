@@ -7,6 +7,7 @@
 #endif
 
 // add headers that you want to pre-compile here
+#include <unknwn.h>
 #include <winrt/Windows.ApplicationModel.Activation.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.Foundation.h>
@@ -14,6 +15,7 @@
 #include <winrt/Windows.Foundation.Metadata.h>
 #include <winrt/Windows.Gaming.Input.h>
 #include <winrt/Windows.Graphics.Display.h>
+#include <winrt/Windows.Graphics.DirectX.Direct3D11.h>
 #include <winrt/Windows.Graphics.Holographic.h>
 #include <winrt/Windows.Perception.People.h>
 #include <winrt/Windows.Perception.Spatial.h>

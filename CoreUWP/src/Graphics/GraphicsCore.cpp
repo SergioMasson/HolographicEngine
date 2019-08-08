@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "GraphicsCore.h"
+#include "GameCore.h"
 #include "StereographicCamera.h"
 
 using namespace Math;
@@ -7,6 +8,7 @@ using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace std::placeholders;
 using namespace winrt::Windows::Graphics::Holographic;
+using namespace winrt::Windows::Perception::Spatial;
 using namespace winrt::Windows::Graphics::DirectX::Direct3D11;
 
 namespace GameCore
@@ -33,25 +35,17 @@ ComPtr<ID2D1Factory>                   g_d2dFactory;
 ComPtr<IDWriteFactory>                 g_dwriteFactory;
 
 bool								   g_supportsVprt;
+bool								   m_canGetHolographicDisplayForCamera;
+bool								   m_canCommitDirect3D11DepthBuffer;
 
 // The holographic space provides a preferred DXGI adapter ID.
 HolographicSpace m_holographicSpace = nullptr;
 
 // Back buffer resources, etc. for attached holographic cameras.
 std::map<UINT32, std::unique_ptr<StereographicCamera>>      g_cameraResources;
-std::mutex												   g_cameraResourcesLock;
+std::mutex												    g_cameraResourcesLock;
 
 winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice m_d3dInteropDevice;
-
-void OnCameraAddedHandler(HolographicSpace const& space, HolographicSpaceCameraAddedEventArgs const& e)
-{
-	//m_mainCamera = std::shared_ptr<StereographicCamera>(new StereographicCamera(e.Camera()));
-}
-
-void OnCameraRemovedHandler(HolographicSpace const& space, HolographicSpaceCameraRemovedEventArgs const& e) 
-{
-	//TODO: Handle case where more camera will be created.
-}
 
 void CreateDeviceIndependetResources() 
 {
@@ -160,6 +154,13 @@ void CreateDeviceResources()
 		g_supportsVprt = true;
 }
 
+// Recreate all device resources and set them back to the current state.
+// Locks the set of holographic camera resources until the function exits.
+void HandleDeviceLost() 
+{
+
+}
+
 void Graphics::Initialize(void)
 {
 	//Initialize Direct2D and IDWrite.
@@ -172,11 +173,46 @@ void Graphics::Initialize(void)
 void Graphics::AttachHolographicSpace(HolographicSpace const& space)
 {
 	//Create a Holographic space for this window.
-
 	space.SetDirect3D11Device(m_d3dInteropDevice);
+}
 
-	m_holographicSpace.CameraAdded(std::bind(OnCameraAddedHandler, _1, _2));
-	m_holographicSpace.CameraRemoved(std::bind(OnCameraRemovedHandler, _1, _2));
+void Graphics::AddHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera)
+{
+	{
+		std::lock_guard<std::mutex> guard(g_cameraResourcesLock);
+
+		g_cameraResources[camera.Id()] = std::make_unique<StereographicCamera>(camera);
+	}
+}
+
+void Graphics::EnsureHolographicCameraResources(winrt::Windows::Graphics::Holographic::HolographicFrame const & frame, winrt::Windows::Graphics::Holographic::HolographicFramePrediction const & prediction)
+{
+	{
+		std::lock_guard<std::mutex> guard(g_cameraResourcesLock);
+
+		for (HolographicCameraPose pose : prediction.CameraPoses())
+		{
+			HolographicCameraRenderingParameters renderingParameters = frame.GetRenderingParameters(pose);
+			StereographicCamera* pCameraResources = g_cameraResources[pose.HolographicCamera().Id()].get();
+
+			pCameraResources->CreateResourcesForBackBuffer(g_d3dDevice.Get(), renderingParameters);
+		}
+	}
+}
+
+void Graphics::RemoveHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera)
+{
+	{
+		std::lock_guard<std::mutex> guard(g_cameraResourcesLock);
+
+		StereographicCamera* pCameraResources = g_cameraResources[camera.Id()].get();
+
+		if (pCameraResources != nullptr)
+		{
+			pCameraResources->ReleaseResourcesForBackBuffer(g_d3dContext.Get());
+			g_cameraResources.erase(camera.Id());
+		}
+	}
 }
 
 void Graphics::Resize(uint32_t width, uint32_t height)
@@ -194,17 +230,125 @@ void Graphics::Shutdown(void)
 	//Implement resource release.
 }
 
-void Graphics::Present() 
+void Graphics::Present(winrt::Windows::Graphics::Holographic::HolographicFrame const& frame)
 {
 	int64_t CurrentTick = SystemTime::GetCurrentTick();
 
-	//TODO: Add Camera present logic.
+	HolographicFramePresentResult presentResult = frame.PresentUsingCurrentPrediction();
 
+	// The PresentUsingCurrentPrediction API will detect when the graphics device
+	// changes or becomes invalid. When this happens, it is considered a Direct3D
+	// device lost scenario.
+	if (presentResult == HolographicFramePresentResult::DeviceRemoved)
+	{
+		// The Direct3D device, context, and resources should be recreated.
+		HandleDeviceLost();
+	}
 	
 	s_FrameTime = (float)SystemTime::TimeBetweenTicks(s_FrameStartTick, CurrentTick);
 
 	s_FrameStartTick = CurrentTick;
 	++s_FrameIndex;
+}
+
+bool Graphics::Render(GameCore::IGameApp& app, HolographicFrame const& holographicFrame, SpatialStationaryFrameOfReference const& m_stationaryReferenceFrame)
+{
+		// Up-to-date frame predictions enhance the effectiveness of image stablization and
+		// allow more accurate positioning of holograms.
+		holographicFrame.UpdateCurrentPrediction();
+		HolographicFramePrediction prediction = holographicFrame.CurrentPrediction();
+
+		bool atLeastOneCameraRendered = false;
+
+		for (auto cameraPose : prediction.CameraPoses())
+		{
+			// This represents the device-based resources for a HolographicCamera.
+			StereographicCamera* pCameraResources = g_cameraResources[cameraPose.HolographicCamera().Id()].get();
+
+			// Get the device context.
+
+			const auto depthStencilView = pCameraResources->GetDepthStencilView();
+
+			// Set render targets to the current holographic camera.
+			ID3D11RenderTargetView *const targets[1] = { pCameraResources->GetRenderTargetView() };
+
+			g_d3dContext->OMSetRenderTargets(1, targets, depthStencilView);
+
+			// Clear the back buffer and depth stencil view.
+			if (m_canGetHolographicDisplayForCamera && cameraPose.HolographicCamera().Display().IsOpaque())
+			{
+				g_d3dContext->ClearRenderTargetView(targets[0], DirectX::Colors::CornflowerBlue);
+			}
+			else
+			{
+				g_d3dContext->ClearRenderTargetView(targets[0], DirectX::Colors::Transparent);
+			}
+			g_d3dContext->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+			//
+			// TODO: Replace the sample content with your own content.
+			//
+			// Notes regarding holographic content:
+			//    * For drawing, remember that you have the potential to fill twice as many pixels
+			//      in a stereoscopic render target as compared to a non-stereoscopic render target
+			//      of the same resolution. Avoid unnecessary or repeated writes to the same pixel,
+			//      and only draw holograms that the user can see.
+			//    * To help occlude hologram geometry, you can create a depth map using geometry
+			//      data obtained via the surface mapping APIs. You can use this depth map to avoid
+			//      rendering holograms that are intended to be hidden behind tables, walls,
+			//      monitors, and so on.
+			//    * On HolographicDisplays that are transparent, black pixels will appear transparent 
+			//      to the user. On such devices, you should clear the screen to Transparent as shown 
+			//      above. You should still use alpha blending to draw semitransparent holograms. 
+			//
+
+
+			// The view and projection matrices for each holographic camera will change
+			// every frame. This function refreshes the data in the constant buffer for
+			// the holographic camera indicated by cameraPose.
+			if (m_stationaryReferenceFrame)
+			{
+				pCameraResources->UpdateViewProjectionBuffer(g_d3dContext.Get(), cameraPose, m_stationaryReferenceFrame.CoordinateSystem());
+			}
+
+			// Attach the view/projection constant buffer for this camera to the graphics pipeline.
+			bool cameraActive = pCameraResources->AttachViewProjectionBuffer(g_d3dContext.Get());
+
+			// Only render world-locked content when positional tracking is active.
+			if (cameraActive)
+			{
+				// Draw the sample hologram.
+				app.RenderScene();
+
+				if (m_canCommitDirect3D11DepthBuffer)
+				{
+					// On versions of the platform that support the CommitDirect3D11DepthBuffer API, we can 
+					// provide the depth buffer to the system, and it will use depth information to stabilize 
+					// the image at a per-pixel level.
+					HolographicCameraRenderingParameters renderingParameters = holographicFrame.GetRenderingParameters(cameraPose);
+					ComPtr<ID3D11Texture2D> spDepthStencil = pCameraResources->GetDepthStencilTexture2D();
+
+					// Direct3D interop APIs are used to provide the buffer to the WinRT API.
+					ComPtr<IDXGIResource1> depthStencilResource;
+
+					winrt::check_hresult(spDepthStencil.As(&depthStencilResource));
+
+					ComPtr<IDXGISurface2> depthDxgiSurface;
+
+					winrt::check_hresult(depthStencilResource->CreateSubresourceSurface(0, &depthDxgiSurface));
+
+					//IDirect3DSurface depthD3DSurface = winrt::Windows::Graphics::DirectX::Direct3D11::CreateDirect3DSurface(depthDxgiSurface.Get());
+
+					// Calling CommitDirect3D11DepthBuffer causes the system to queue Direct3D commands to 
+					// read the depth buffer. It will then use that information to stabilize the image as
+					// the HolographicFrame is presented.
+					//renderingParameters.CommitDirect3D11DepthBuffer(depthD3DSurface);
+				}
+			}
+			atLeastOneCameraRendered = true;
+		}
+
+		return atLeastOneCameraRendered;
 }
 
 uint64_t Graphics::GetFrameCount(void)
