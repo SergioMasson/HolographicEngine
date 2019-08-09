@@ -16,6 +16,7 @@
 #include <winrt/Windows.Gaming.Input.h>
 #include <winrt/Windows.Graphics.Display.h>
 #include <winrt/Windows.Graphics.DirectX.Direct3D11.h>
+#include <windows.graphics.directx.direct3d11.interop.h>
 #include <winrt/Windows.Graphics.Holographic.h>
 #include <winrt/Windows.Perception.People.h>
 #include <winrt/Windows.Perception.Spatial.h>
@@ -23,9 +24,7 @@
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Input.Spatial.h>
-#include <Windows.Graphics.Directx.Direct3D11.Interop.h>
 #include <wrl/client.h>
-#include <dxgi.h>
 
 #define SSE2  //indicates we want SSE2
 #define SSE41 //indicates we want SSE4.1 instructions (floor and blend is available)
@@ -44,6 +43,7 @@
 #include <immintrin.h> //avx2
 #endif
 
+#include <dxgi.h>
 #include <d3d11.h>
 #include <d2d1_2.h>
 #include <d3d11_4.h>
