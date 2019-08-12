@@ -313,6 +313,7 @@ bool Graphics::Render(GameCore::IGameApp& app, HolographicFrame const& holograph
 						// provide the depth buffer to the system, and it will use depth information to stabilize 
 						// the image at a per-pixel level.
 						HolographicCameraRenderingParameters renderingParameters = holographicFrame.GetRenderingParameters(cameraPose);
+						
 						ComPtr<ID3D11Texture2D> spDepthStencil = pCameraResources->GetDepthStencilTexture2D();
 
 						// Direct3D interop APIs are used to provide the buffer to the WinRT API.
