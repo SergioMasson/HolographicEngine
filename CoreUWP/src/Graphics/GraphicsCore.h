@@ -60,8 +60,11 @@ namespace HolographicEngine::Graphics
 	extern uint32_t g_DisplayHeight;
 
 	extern ID3D11Device* g_Device;
+	extern ID3D11DeviceContext* g_Context;
 
 	extern winrt::agile_ref<winrt::Windows::UI::Core::CoreWindow> g_window;
+
+	extern bool g_supportsVprt;
 
 	//extern CommandListManager g_CommandManager;
 	//extern ContextManager g_ContextManager;

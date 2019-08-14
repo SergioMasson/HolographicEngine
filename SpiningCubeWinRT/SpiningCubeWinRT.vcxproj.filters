@@ -39,4 +39,11 @@
   <ItemGroup>
     <Text Include="readme.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\VPRTVertexShader.hlsl" />
+    <FxCompile Include="Shaders\GeometryShader.hlsl" />
+    <FxCompile Include="Shaders\PixelShader.hlsl" />
+    <FxCompile Include="Shaders\VertexShader.hlsl" />
+    <FxCompile Include="Shaders\VertexShaderShared.hlsl" />
+  </ItemGroup>
 </Project>
