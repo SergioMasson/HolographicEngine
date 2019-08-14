@@ -17,10 +17,10 @@
 #include <mutex>
 #include <zlib.h> // From NuGet package
 
-using namespace Utility;
+using namespace HolographicEngine::Utility;
 using namespace std;
 
-namespace Utility
+namespace HolographicEngine::Utility
 {
 	ByteArray NullFile = make_shared<vector<unsigned char> >(vector<unsigned char>());
 }
@@ -38,7 +38,7 @@ ByteArray ReadFileHelper(const wstring& fileName)
 	if (!file)
 		return NullFile;
 
-	Utility::ByteArray byteArray = make_shared<vector<unsigned char> >(file.seekg(0, ios::end).tellg());
+	HolographicEngine::Utility::ByteArray byteArray = make_shared<vector<unsigned char> >(file.seekg(0, ios::end).tellg());
 	file.seekg(0, ios::beg).read((char*)byteArray->data(), byteArray->size());
 	file.close();
 
@@ -85,7 +85,7 @@ ByteArray Inflate(ByteArray CompressedSource, int& err, uint32_t ChunkSize = 0x1
 
 	ASSERT(strm.total_out > 0, "Nothing to decompress");
 
-	Utility::ByteArray byteArray = make_shared<vector<unsigned char> >(strm.total_out);
+	HolographicEngine::Utility::ByteArray byteArray = make_shared<vector<unsigned char> >(strm.total_out);
 
 	// Allocate actual memory for this.
 	// copy the bits into that RAM.
@@ -119,19 +119,19 @@ ByteArray DecompressZippedFile(wstring& fileName)
 	ByteArray DecompressedFile = Inflate(CompressedFile, error);
 	if (DecompressedFile->size() == 0)
 	{
-		Utility::Printf(L"Couldn't unzip file %s:  Error = %d\n", fileName.c_str(), error);
+		HolographicEngine::Utility::Printf(L"Couldn't unzip file %s:  Error = %d\n", fileName.c_str(), error);
 		return NullFile;
 	}
 
 	return DecompressedFile;
 }
 
-ByteArray Utility::ReadFileSync(const wstring& fileName)
+ByteArray HolographicEngine::Utility::ReadFileSync(const wstring& fileName)
 {
 	return ReadFileHelperEx(make_shared<wstring>(fileName));
 }
 
-task<ByteArray> Utility::ReadFileAsync(const wstring& fileName)
+task<ByteArray> HolographicEngine::Utility::ReadFileAsync(const wstring& fileName)
 {
 	shared_ptr<wstring> SharedPtr = make_shared<wstring>(fileName);
 	return create_task([=] { return ReadFileHelperEx(SharedPtr); });

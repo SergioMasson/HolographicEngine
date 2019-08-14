@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "GameCore.h"
+#include "Graphics/GraphicsCore.h"
 
 class SpiningCubeApp : public GameCore::IGameApp
 {
@@ -18,7 +19,6 @@ CREATE_APPLICATION(SpiningCubeApp)
 
 void SpiningCubeApp::Startup()
 {
-	//TODO: Add your startup code here.
 }
 
 void SpiningCubeApp::Cleanup() 

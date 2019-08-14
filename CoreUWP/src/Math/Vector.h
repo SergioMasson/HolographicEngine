@@ -15,7 +15,7 @@
 
 #include "Scalar.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	class Vector4;
 

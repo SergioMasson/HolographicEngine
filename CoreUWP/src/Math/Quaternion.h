@@ -9,7 +9,7 @@
 
 #include "Vector.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	class Quaternion
 	{

@@ -9,7 +9,7 @@
 
 #include "VectorMath.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	class BoundingSphere
 	{

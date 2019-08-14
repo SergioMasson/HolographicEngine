@@ -14,7 +14,7 @@
 #include "Common.h"
 #include <random>
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	class RandomNumberGenerator
 	{

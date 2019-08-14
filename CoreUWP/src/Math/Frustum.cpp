@@ -14,7 +14,7 @@
 #include "pch.h"
 #include "Frustum.h"
 
-using namespace Math;
+using namespace HolographicEngine::Math;
 
 void Frustum::ConstructPerspectiveFrustum(float HTan, float VTan, float NearClip, float FarClip)
 {

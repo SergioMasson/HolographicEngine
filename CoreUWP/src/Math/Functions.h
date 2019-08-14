@@ -20,7 +20,7 @@
 #include "Matrix4.h"
 #include "Quaternion.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	// To allow floats to implicitly construct Scalars, we need to clarify these operators and suppress
 	// upconversion.

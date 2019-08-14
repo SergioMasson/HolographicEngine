@@ -49,10 +49,10 @@ struct DIMOUSESTATE2
 
 namespace
 {
-	bool s_Buttons[2][GameInput::kNumDigitalInputs];
-	float s_HoldDuration[GameInput::kNumDigitalInputs] = { 0.0f };
-	float s_Analogs[GameInput::kNumAnalogInputs];
-	float s_AnalogsTC[GameInput::kNumAnalogInputs];
+	bool s_Buttons[2][HolographicEngine::GameInput::kNumDigitalInputs];
+	float s_HoldDuration[HolographicEngine::GameInput::kNumDigitalInputs] = { 0.0f };
+	float s_Analogs[HolographicEngine::GameInput::kNumAnalogInputs];
+	float s_AnalogsTC[HolographicEngine::GameInput::kNumAnalogInputs];
 
 #ifdef USE_KEYBOARD_MOUSE
 
@@ -64,7 +64,7 @@ namespace
 
 	DIMOUSESTATE2 s_MouseState;
 	unsigned char s_Keybuffer[256];
-	unsigned char s_DXKeyMapping[GameInput::kNumKeys]; // map DigitalInput enum to DX key codes
+	unsigned char s_DXKeyMapping[HolographicEngine::GameInput::kNumKeys]; // map DigitalInput enum to DX key codes
 
 #endif
 
@@ -209,110 +209,110 @@ namespace
 #else
 #define WinRTKey(name) (unsigned char)winrt::Windows::System::VirtualKey::name
 
-		s_DXKeyMapping[GameInput::kKey_escape] = WinRTKey(Escape);
-		s_DXKeyMapping[GameInput::kKey_1] = WinRTKey(Number1);
-		s_DXKeyMapping[GameInput::kKey_2] = WinRTKey(Number2);
-		s_DXKeyMapping[GameInput::kKey_3] = WinRTKey(Number3);
-		s_DXKeyMapping[GameInput::kKey_4] = WinRTKey(Number4);
-		s_DXKeyMapping[GameInput::kKey_5] = WinRTKey(Number5);
-		s_DXKeyMapping[GameInput::kKey_6] = WinRTKey(Number6);
-		s_DXKeyMapping[GameInput::kKey_7] = WinRTKey(Number7);
-		s_DXKeyMapping[GameInput::kKey_8] = WinRTKey(Number8);
-		s_DXKeyMapping[GameInput::kKey_9] = WinRTKey(Number9);
-		s_DXKeyMapping[GameInput::kKey_0] = WinRTKey(Number0);
-		s_DXKeyMapping[GameInput::kKey_minus] = WinRTKey(Subtract);
-		s_DXKeyMapping[GameInput::kKey_equals] = WinRTKey(Add);
-		s_DXKeyMapping[GameInput::kKey_back] = WinRTKey(Back);
-		s_DXKeyMapping[GameInput::kKey_tab] = WinRTKey(Tab);
-		s_DXKeyMapping[GameInput::kKey_q] = WinRTKey(Q);
-		s_DXKeyMapping[GameInput::kKey_w] = WinRTKey(W);
-		s_DXKeyMapping[GameInput::kKey_e] = WinRTKey(E);
-		s_DXKeyMapping[GameInput::kKey_r] = WinRTKey(R);
-		s_DXKeyMapping[GameInput::kKey_t] = WinRTKey(T);
-		s_DXKeyMapping[GameInput::kKey_y] = WinRTKey(Y);
-		s_DXKeyMapping[GameInput::kKey_u] = WinRTKey(U);
-		s_DXKeyMapping[GameInput::kKey_i] = WinRTKey(I);
-		s_DXKeyMapping[GameInput::kKey_o] = WinRTKey(O);
-		s_DXKeyMapping[GameInput::kKey_p] = WinRTKey(P);
-		s_DXKeyMapping[GameInput::kKey_lbracket] = 219;
-		s_DXKeyMapping[GameInput::kKey_rbracket] = 221;
-		s_DXKeyMapping[GameInput::kKey_return] = WinRTKey(Enter);
-		s_DXKeyMapping[GameInput::kKey_lcontrol] = WinRTKey(Control);  // No L/R
-		s_DXKeyMapping[GameInput::kKey_a] = WinRTKey(A);
-		s_DXKeyMapping[GameInput::kKey_s] = WinRTKey(S);
-		s_DXKeyMapping[GameInput::kKey_d] = WinRTKey(D);
-		s_DXKeyMapping[GameInput::kKey_f] = WinRTKey(F);
-		s_DXKeyMapping[GameInput::kKey_g] = WinRTKey(G);
-		s_DXKeyMapping[GameInput::kKey_h] = WinRTKey(H);
-		s_DXKeyMapping[GameInput::kKey_j] = WinRTKey(J);
-		s_DXKeyMapping[GameInput::kKey_k] = WinRTKey(K);
-		s_DXKeyMapping[GameInput::kKey_l] = WinRTKey(L);
-		s_DXKeyMapping[GameInput::kKey_semicolon] = 186;
-		s_DXKeyMapping[GameInput::kKey_apostrophe] = 222;
-		s_DXKeyMapping[GameInput::kKey_grave] = 192; // ` or ~
-		s_DXKeyMapping[GameInput::kKey_lshift] = WinRTKey(LeftShift);
-		s_DXKeyMapping[GameInput::kKey_backslash] = 220;
-		s_DXKeyMapping[GameInput::kKey_z] = WinRTKey(Z);
-		s_DXKeyMapping[GameInput::kKey_x] = WinRTKey(X);
-		s_DXKeyMapping[GameInput::kKey_c] = WinRTKey(C);
-		s_DXKeyMapping[GameInput::kKey_v] = WinRTKey(V);
-		s_DXKeyMapping[GameInput::kKey_b] = WinRTKey(B);
-		s_DXKeyMapping[GameInput::kKey_n] = WinRTKey(N);
-		s_DXKeyMapping[GameInput::kKey_m] = WinRTKey(M);
-		s_DXKeyMapping[GameInput::kKey_comma] = 188;
-		s_DXKeyMapping[GameInput::kKey_period] = 190;
-		s_DXKeyMapping[GameInput::kKey_slash] = 191;
-		s_DXKeyMapping[GameInput::kKey_rshift] = WinRTKey(RightShift);
-		s_DXKeyMapping[GameInput::kKey_multiply] = WinRTKey(Multiply);
-		s_DXKeyMapping[GameInput::kKey_lalt] = 255; // Only a modifier
-		s_DXKeyMapping[GameInput::kKey_space] = WinRTKey(Space);
-		s_DXKeyMapping[GameInput::kKey_capital] = WinRTKey(CapitalLock);
-		s_DXKeyMapping[GameInput::kKey_f1] = WinRTKey(F1);
-		s_DXKeyMapping[GameInput::kKey_f2] = WinRTKey(F2);
-		s_DXKeyMapping[GameInput::kKey_f3] = WinRTKey(F3);
-		s_DXKeyMapping[GameInput::kKey_f4] = WinRTKey(F4);
-		s_DXKeyMapping[GameInput::kKey_f5] = WinRTKey(F5);
-		s_DXKeyMapping[GameInput::kKey_f6] = WinRTKey(F6);
-		s_DXKeyMapping[GameInput::kKey_f7] = WinRTKey(F7);
-		s_DXKeyMapping[GameInput::kKey_f8] = WinRTKey(F8);
-		s_DXKeyMapping[GameInput::kKey_f9] = WinRTKey(F9);
-		s_DXKeyMapping[GameInput::kKey_f10] = WinRTKey(F10);
-		s_DXKeyMapping[GameInput::kKey_numlock] = WinRTKey(NumberKeyLock);
-		s_DXKeyMapping[GameInput::kKey_scroll] = WinRTKey(Scroll);
-		s_DXKeyMapping[GameInput::kKey_numpad7] = WinRTKey(NumberPad7);
-		s_DXKeyMapping[GameInput::kKey_numpad8] = WinRTKey(NumberPad8);
-		s_DXKeyMapping[GameInput::kKey_numpad9] = WinRTKey(NumberPad9);
-		s_DXKeyMapping[GameInput::kKey_subtract] = WinRTKey(Subtract);
-		s_DXKeyMapping[GameInput::kKey_numpad4] = WinRTKey(NumberPad4);
-		s_DXKeyMapping[GameInput::kKey_numpad5] = WinRTKey(NumberPad5);
-		s_DXKeyMapping[GameInput::kKey_numpad6] = WinRTKey(NumberPad6);
-		s_DXKeyMapping[GameInput::kKey_add] = WinRTKey(Add);
-		s_DXKeyMapping[GameInput::kKey_numpad1] = WinRTKey(NumberPad1);
-		s_DXKeyMapping[GameInput::kKey_numpad2] = WinRTKey(NumberPad2);
-		s_DXKeyMapping[GameInput::kKey_numpad3] = WinRTKey(NumberPad3);
-		s_DXKeyMapping[GameInput::kKey_numpad0] = WinRTKey(NumberPad0);
-		s_DXKeyMapping[GameInput::kKey_decimal] = WinRTKey(Decimal);
-		s_DXKeyMapping[GameInput::kKey_f11] = WinRTKey(F11);
-		s_DXKeyMapping[GameInput::kKey_f12] = WinRTKey(F12);
-		s_DXKeyMapping[GameInput::kKey_numpadenter] = WinRTKey(Enter); // No distinction
-		s_DXKeyMapping[GameInput::kKey_rcontrol] = WinRTKey(Control);  // No L/R
-		s_DXKeyMapping[GameInput::kKey_divide] = WinRTKey(Divide);
-		s_DXKeyMapping[GameInput::kKey_sysrq] = 255; // Ignored
-		s_DXKeyMapping[GameInput::kKey_ralt] = 255; // Only a modifier
-		s_DXKeyMapping[GameInput::kKey_pause] = WinRTKey(Pause);
-		s_DXKeyMapping[GameInput::kKey_home] = WinRTKey(Home);
-		s_DXKeyMapping[GameInput::kKey_up] = WinRTKey(Up);
-		s_DXKeyMapping[GameInput::kKey_pgup] = WinRTKey(PageUp);
-		s_DXKeyMapping[GameInput::kKey_left] = WinRTKey(Left);
-		s_DXKeyMapping[GameInput::kKey_right] = WinRTKey(Right);
-		s_DXKeyMapping[GameInput::kKey_end] = WinRTKey(End);
-		s_DXKeyMapping[GameInput::kKey_down] = WinRTKey(Down);
-		s_DXKeyMapping[GameInput::kKey_pgdn] = WinRTKey(PageDown);
-		s_DXKeyMapping[GameInput::kKey_insert] = WinRTKey(Insert);
-		s_DXKeyMapping[GameInput::kKey_delete] = WinRTKey(Delete);
-		s_DXKeyMapping[GameInput::kKey_lwin] = WinRTKey(LeftWindows);
-		s_DXKeyMapping[GameInput::kKey_rwin] = WinRTKey(RightWindows);
-		s_DXKeyMapping[GameInput::kKey_apps] = WinRTKey(Application);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_escape] = WinRTKey(Escape);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_1] = WinRTKey(Number1);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_2] = WinRTKey(Number2);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_3] = WinRTKey(Number3);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_4] = WinRTKey(Number4);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_5] = WinRTKey(Number5);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_6] = WinRTKey(Number6);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_7] = WinRTKey(Number7);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_8] = WinRTKey(Number8);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_9] = WinRTKey(Number9);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_0] = WinRTKey(Number0);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_minus] = WinRTKey(Subtract);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_equals] = WinRTKey(Add);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_back] = WinRTKey(Back);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_tab] = WinRTKey(Tab);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_q] = WinRTKey(Q);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_w] = WinRTKey(W);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_e] = WinRTKey(E);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_r] = WinRTKey(R);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_t] = WinRTKey(T);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_y] = WinRTKey(Y);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_u] = WinRTKey(U);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_i] = WinRTKey(I);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_o] = WinRTKey(O);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_p] = WinRTKey(P);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_lbracket] = 219;
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_rbracket] = 221;
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_return] = WinRTKey(Enter);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_lcontrol] = WinRTKey(Control);  // No L/R
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_a] = WinRTKey(A);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_s] = WinRTKey(S);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_d] = WinRTKey(D);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f] = WinRTKey(F);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_g] = WinRTKey(G);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_h] = WinRTKey(H);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_j] = WinRTKey(J);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_k] = WinRTKey(K);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_l] = WinRTKey(L);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_semicolon] = 186;
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_apostrophe] = 222;
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_grave] = 192; // ` or ~
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_lshift] = WinRTKey(LeftShift);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_backslash] = 220;
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_z] = WinRTKey(Z);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_x] = WinRTKey(X);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_c] = WinRTKey(C);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_v] = WinRTKey(V);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_b] = WinRTKey(B);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_n] = WinRTKey(N);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_m] = WinRTKey(M);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_comma] = 188;
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_period] = 190;
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_slash] = 191;
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_rshift] = WinRTKey(RightShift);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_multiply] = WinRTKey(Multiply);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_lalt] = 255; // Only a modifier
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_space] = WinRTKey(Space);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_capital] = WinRTKey(CapitalLock);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f1] = WinRTKey(F1);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f2] = WinRTKey(F2);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f3] = WinRTKey(F3);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f4] = WinRTKey(F4);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f5] = WinRTKey(F5);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f6] = WinRTKey(F6);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f7] = WinRTKey(F7);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f8] = WinRTKey(F8);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f9] = WinRTKey(F9);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f10] = WinRTKey(F10);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numlock] = WinRTKey(NumberKeyLock);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_scroll] = WinRTKey(Scroll);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad7] = WinRTKey(NumberPad7);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad8] = WinRTKey(NumberPad8);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad9] = WinRTKey(NumberPad9);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_subtract] = WinRTKey(Subtract);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad4] = WinRTKey(NumberPad4);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad5] = WinRTKey(NumberPad5);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad6] = WinRTKey(NumberPad6);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_add] = WinRTKey(Add);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad1] = WinRTKey(NumberPad1);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad2] = WinRTKey(NumberPad2);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad3] = WinRTKey(NumberPad3);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpad0] = WinRTKey(NumberPad0);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_decimal] = WinRTKey(Decimal);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f11] = WinRTKey(F11);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_f12] = WinRTKey(F12);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_numpadenter] = WinRTKey(Enter); // No distinction
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_rcontrol] = WinRTKey(Control);  // No L/R
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_divide] = WinRTKey(Divide);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_sysrq] = 255; // Ignored
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_ralt] = 255; // Only a modifier
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_pause] = WinRTKey(Pause);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_home] = WinRTKey(Home);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_up] = WinRTKey(Up);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_pgup] = WinRTKey(PageUp);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_left] = WinRTKey(Left);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_right] = WinRTKey(Right);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_end] = WinRTKey(End);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_down] = WinRTKey(Down);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_pgdn] = WinRTKey(PageDown);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_insert] = WinRTKey(Insert);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_delete] = WinRTKey(Delete);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_lwin] = WinRTKey(LeftWindows);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_rwin] = WinRTKey(RightWindows);
+		s_DXKeyMapping[HolographicEngine::GameInput::kKey_apps] = WinRTKey(Application);
 #endif
 	}
 
@@ -404,7 +404,7 @@ namespace
 #endif
 }
 
-void GameInput::Initialize()
+void HolographicEngine::GameInput::Initialize()
 {
 	// For Windows 8
 	//    XInputEnable(TRUE);
@@ -417,14 +417,14 @@ void GameInput::Initialize()
 #endif
 }
 
-void GameInput::Shutdown()
+void HolographicEngine::GameInput::Shutdown()
 {
 #ifdef USE_KEYBOARD_MOUSE
 	KbmShutdown();
 #endif
 }
 
-void GameInput::Update(float frameDelta)
+void HolographicEngine::GameInput::Update(float frameDelta)
 {
 	memcpy(s_Buttons[1], s_Buttons[0], sizeof(s_Buttons[0]));
 	memset(s_Buttons[0], 0, sizeof(s_Buttons[0]));
@@ -533,47 +533,47 @@ void GameInput::Update(float frameDelta)
 	}
 }
 
-bool GameInput::IsAnyPressed(void)
+bool HolographicEngine::GameInput::IsAnyPressed(void)
 {
 	return s_Buttons[0] != 0;
 }
 
-bool GameInput::IsPressed(DigitalInput di)
+bool HolographicEngine::GameInput::IsPressed(DigitalInput di)
 {
 	return s_Buttons[0][di];
 }
 
-bool GameInput::IsFirstPressed(DigitalInput di)
+bool HolographicEngine::GameInput::IsFirstPressed(DigitalInput di)
 {
 	return s_Buttons[0][di] && !s_Buttons[1][di];
 }
 
-bool GameInput::IsReleased(DigitalInput di)
+bool HolographicEngine::GameInput::IsReleased(DigitalInput di)
 {
 	return !s_Buttons[0][di];
 }
 
-bool GameInput::IsFirstReleased(DigitalInput di)
+bool HolographicEngine::GameInput::IsFirstReleased(DigitalInput di)
 {
 	return !s_Buttons[0][di] && s_Buttons[1][di];
 }
 
-float GameInput::GetDurationPressed(DigitalInput di)
+float HolographicEngine::GameInput::GetDurationPressed(DigitalInput di)
 {
 	return s_HoldDuration[di];
 }
 
-float GameInput::GetAnalogInput(AnalogInput ai)
+float HolographicEngine::GameInput::GetAnalogInput(AnalogInput ai)
 {
 	return s_Analogs[ai];
 }
 
-float GameInput::GetTimeCorrectedAnalogInput(AnalogInput ai)
+float HolographicEngine::GameInput::GetTimeCorrectedAnalogInput(AnalogInput ai)
 {
 	return s_AnalogsTC[ai];
 }
 
-void GameInput::SetKeyState(winrt::Windows::System::VirtualKey key, bool IsDown)
+void HolographicEngine::GameInput::SetKeyState(winrt::Windows::System::VirtualKey key, bool IsDown)
 {
 	s_Keybuffer[(unsigned char)key] = IsDown ? 0x80 : 0x00;
 	//DEBUGPRINT("%d key is %s", (unsigned int)key, IsDown ? "down" : "up");

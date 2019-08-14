@@ -33,7 +33,7 @@ using winrt::Windows::Foundation::TypedEventHandler;
 //	extern ColorBuffer g_GenMipsBuffer;
 //}
 
-namespace GameCore
+namespace HolographicEngine::GameCore
 {
 	using namespace Graphics;
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "Quaternion.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	// Represents a 3x3 matrix while occuping a 4x4 memory footprint.  The unused row and column are undefined but implicitly
 	// (0, 0, 0, 1).  Constructing a Matrix4 will make those values explicit.

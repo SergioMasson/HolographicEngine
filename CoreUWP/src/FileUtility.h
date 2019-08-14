@@ -11,7 +11,7 @@
 #include <string>
 #include <ppl.h>
 
-namespace Utility
+namespace HolographicEngine::Utility
 {
 	using namespace std;
 	using namespace concurrency;

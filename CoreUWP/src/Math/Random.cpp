@@ -8,7 +8,7 @@
 #include "pch.h"
 #include "Random.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	RandomNumberGenerator g_RNG;
 }

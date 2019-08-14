@@ -13,7 +13,7 @@
 
 #pragma once
 
-namespace GameInput
+namespace HolographicEngine::GameInput
 {
 	void Initialize();
 	void Shutdown();

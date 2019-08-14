@@ -16,7 +16,7 @@
 #include "BoundingPlane.h"
 #include "BoundingSphere.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	class Frustum
 	{

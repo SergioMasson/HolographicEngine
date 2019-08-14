@@ -9,7 +9,7 @@
 
 #include "Common.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	class Scalar
 	{

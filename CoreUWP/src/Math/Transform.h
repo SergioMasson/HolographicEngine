@@ -15,7 +15,7 @@
 
 #include "Matrix3.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	// This transform strictly prohibits non-uniform scale.  Scale itself is barely tolerated.
 	__declspec(align(16)) class OrthogonalTransform

@@ -8,7 +8,7 @@
 #pragma once
 #include "VectorMath.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	class BoundingPlane
 	{

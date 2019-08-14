@@ -15,7 +15,7 @@
 
 #include "Transform.h"
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	__declspec(align(16)) class Matrix4
 	{

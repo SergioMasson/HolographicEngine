@@ -2,7 +2,7 @@
 
 #include "pch.h"
 
-namespace GameCore
+namespace HolographicEngine::GameCore
 {
 	class IGameApp
 	{
@@ -35,8 +35,8 @@ namespace GameCore
 #define CREATE_APPLICATION( app_class ) \
     MAIN_FUNCTION() \
     { \
-        GameCore::IGameApp* app = new app_class(); \
-        GameCore::RunApplication( *app, L#app_class ); \
+        HolographicEngine::GameCore::IGameApp* app = new app_class(); \
+        HolographicEngine::GameCore::RunApplication( *app, L#app_class ); \
         delete app; \
         return 0; } \
     

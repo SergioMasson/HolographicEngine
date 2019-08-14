@@ -5,7 +5,7 @@
 
 #define INLINE __forceinline
 
-namespace Math
+namespace HolographicEngine::Math
 {
 	template <typename T> __forceinline T AlignUpWithMask(T value, size_t mask)
 	{

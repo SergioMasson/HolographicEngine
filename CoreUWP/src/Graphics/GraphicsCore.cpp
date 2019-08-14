@@ -3,7 +3,7 @@
 #include "GameCore.h"
 #include "StereographicCamera.h"
 
-using namespace Math;
+using namespace HolographicEngine::Math;
 using namespace DirectX;
 using namespace Microsoft::WRL;
 using namespace std::placeholders;
@@ -11,7 +11,7 @@ using namespace winrt::Windows::Graphics::Holographic;
 using namespace winrt::Windows::Perception::Spatial;
 using namespace winrt::Windows::Graphics::DirectX::Direct3D11;
 
-namespace GameCore
+namespace HolographicEngine::GameCore
 {
 	//TODO: Do we really need this ?
 	extern winrt::agile_ref<winrt::Windows::UI::Core::CoreWindow> g_window;
@@ -42,7 +42,7 @@ bool								   m_canCommitDirect3D11DepthBuffer;
 HolographicSpace m_holographicSpace = nullptr;
 
 // Back buffer resources, etc. for attached holographic cameras.
-std::map<UINT32, std::unique_ptr<StereographicCamera>>      g_cameraResources;
+std::map<UINT32, std::unique_ptr<HolographicEngine::Graphics::StereographicCamera>>      g_cameraResources;
 std::mutex												    g_cameraResourcesLock;
 
 winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice m_d3dInteropDevice;
@@ -72,7 +72,7 @@ void CreateDeviceResources()
 	UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #if defined(_DEBUG)
-	if (Graphics::SdkLayersAvailable())
+	if (HolographicEngine::Graphics::SdkLayersAvailable())
 	{
 		// If the project is in a debug build, enable debugging via SDK Layers with this flag.
 		creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -161,7 +161,7 @@ void HandleDeviceLost()
 
 }
 
-void Graphics::Initialize(void)
+void HolographicEngine::Graphics::Initialize(void)
 {
 	//Initialize Direct2D and IDWrite.
 	CreateDeviceIndependetResources();
@@ -170,13 +170,13 @@ void Graphics::Initialize(void)
 	CreateDeviceResources();
 }
 
-void Graphics::AttachHolographicSpace(HolographicSpace const& space)
+void HolographicEngine::Graphics::AttachHolographicSpace(HolographicSpace const& space)
 {
 	//Create a Holographic space for this window.
 	space.SetDirect3D11Device(m_d3dInteropDevice);
 }
 
-void Graphics::AddHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera)
+void HolographicEngine::Graphics::AddHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera)
 {
 	{
 		std::lock_guard<std::mutex> guard(g_cameraResourcesLock);
@@ -185,7 +185,7 @@ void Graphics::AddHolographicCamera(winrt::Windows::Graphics::Holographic::Holog
 	}
 }
 
-void Graphics::EnsureHolographicCameraResources(winrt::Windows::Graphics::Holographic::HolographicFrame const & frame, winrt::Windows::Graphics::Holographic::HolographicFramePrediction const & prediction)
+void HolographicEngine::Graphics::EnsureHolographicCameraResources(winrt::Windows::Graphics::Holographic::HolographicFrame const & frame, winrt::Windows::Graphics::Holographic::HolographicFramePrediction const & prediction)
 {
 	{
 		std::lock_guard<std::mutex> guard(g_cameraResourcesLock);
@@ -200,7 +200,7 @@ void Graphics::EnsureHolographicCameraResources(winrt::Windows::Graphics::Hologr
 	}
 }
 
-void Graphics::RemoveHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera)
+void HolographicEngine::Graphics::RemoveHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera)
 {
 	{
 		std::lock_guard<std::mutex> guard(g_cameraResourcesLock);
@@ -215,22 +215,22 @@ void Graphics::RemoveHolographicCamera(winrt::Windows::Graphics::Holographic::Ho
 	}
 }
 
-void Graphics::Resize(uint32_t width, uint32_t height)
+void HolographicEngine::Graphics::Resize(uint32_t width, uint32_t height)
 {
 	//TODO: Add resize logic (if needed.)
 }
 
-void Graphics::Terminate(void)
+void HolographicEngine::Graphics::Terminate(void)
 {
 	//TODO: Implement resource release.
 }
 
-void Graphics::Shutdown(void)
+void HolographicEngine::Graphics::Shutdown(void)
 {
 	//Implement resource release.
 }
 
-void Graphics::Present(winrt::Windows::Graphics::Holographic::HolographicFrame const& frame)
+void HolographicEngine::Graphics::Present(winrt::Windows::Graphics::Holographic::HolographicFrame const& frame)
 {
 	int64_t CurrentTick = SystemTime::GetCurrentTick();
 
@@ -251,7 +251,7 @@ void Graphics::Present(winrt::Windows::Graphics::Holographic::HolographicFrame c
 	++s_FrameIndex;
 }
 
-bool Graphics::Render(GameCore::IGameApp& app, HolographicFrame const& holographicFrame, SpatialStationaryFrameOfReference const& m_stationaryReferenceFrame)
+bool HolographicEngine::Graphics::Render(GameCore::IGameApp& app, HolographicFrame const& holographicFrame, SpatialStationaryFrameOfReference const& m_stationaryReferenceFrame)
 {
 		// Up-to-date frame predictions enhance the effectiveness of image stablization and
 		// allow more accurate positioning of holograms.
@@ -344,17 +344,17 @@ bool Graphics::Render(GameCore::IGameApp& app, HolographicFrame const& holograph
 		return atLeastOneCameraRendered;
 }
 
-uint64_t Graphics::GetFrameCount(void)
+uint64_t HolographicEngine::Graphics::GetFrameCount(void)
 {
 	return s_FrameIndex;
 }
 
-float Graphics::GetFrameTime(void)
+float HolographicEngine::Graphics::GetFrameTime(void)
 {
 	return s_FrameTime == 0.0f ? 0.0f : 1.0f / s_FrameTime;
 }
 
-float Graphics::GetFrameRate(void)
+float HolographicEngine::Graphics::GetFrameRate(void)
 {
 	return 0.0f;
 }

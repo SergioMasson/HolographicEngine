@@ -18,7 +18,7 @@
 #include "StereographicCamera.h"
 #include "pch.h"
 
-namespace Graphics
+namespace HolographicEngine::Graphics
 {
 #ifndef RELEASE
 	extern const GUID WKPDID_D3DDebugObjectName;
