@@ -17,6 +17,8 @@
 #include <mutex>
 #include <zlib.h> // From NuGet package
 
+
+
 using namespace HolographicEngine::Utility;
 using namespace std;
 
@@ -38,7 +40,7 @@ ByteArray ReadFileHelper(const wstring& fileName)
 	if (!file)
 		return NullFile;
 
-	HolographicEngine::Utility::ByteArray byteArray = make_shared<vector<unsigned char> >(file.seekg(0, ios::end).tellg());
+	ByteArray byteArray = make_shared<vector<unsigned char> >(file.seekg(0, ios::end).tellg());
 	file.seekg(0, ios::beg).read((char*)byteArray->data(), byteArray->size());
 	file.close();
 

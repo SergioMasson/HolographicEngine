@@ -123,19 +123,20 @@ void SpiningCubeApp::Startup()
 		);
 	});
 
-	task<void> createGSTask;
+	//task<void> createGSTask;
 
-	if (!m_usingVprtShaders)
-	{
-		// After the pass-through geometry shader file is loaded, create the shader.
-		createGSTask = loadGSTask.then([this](const Utility::ByteArray&& fileData)
-		{
-			winrt::check_hresult(Graphics::g_Device->CreateGeometryShader(fileData->data(), fileData->size(), nullptr, &m_geometryShader ) );
-		});
-	}
+	//if (!m_usingVprtShaders)
+	//{
+	//	// After the pass-through geometry shader file is loaded, create the shader.
+	//	createGSTask = loadGSTask.then([this](const Utility::ByteArray&& fileData)
+	//	{
+	//		winrt::check_hresult(Graphics::g_Device->CreateGeometryShader(fileData->data(), fileData->size(), nullptr, &m_geometryShader ) );
+	//		return;
+	//	});
+	//}
 
 	// Once all shaders are loaded, create the mesh.
-	task<void> shaderTaskGroup = m_usingVprtShaders ? (createPSTask && createVSTask) : (createPSTask && createVSTask && createGSTask);
+	task<void> shaderTaskGroup = (createPSTask && createVSTask);
 	task<void> createCubeTask = shaderTaskGroup.then([this]()
 	{
 		// Load mesh vertices. Each vertex has a position and a color.
