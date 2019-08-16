@@ -143,8 +143,7 @@ void CreateDeviceResources()
 			));
 	}
 
-	HolographicEngine::Graphics::g_Device = g_d3dDevice.Detach();
-	HolographicEngine::Graphics::g_Context = g_d3dContext.Detach();
+	
 
 	// Acquire the DXGI interface for the Direct3D device.
 	ComPtr<IDXGIDevice> dxgiDevice;
@@ -168,6 +167,9 @@ void CreateDeviceResources()
 
 	if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
 		HolographicEngine::Graphics::g_supportsVprt = true;
+
+	HolographicEngine::Graphics::g_Device = g_d3dDevice.Detach();
+	HolographicEngine::Graphics::g_Context = g_d3dContext.Detach();
 }
 
 // Recreate all device resources and set them back to the current state.
