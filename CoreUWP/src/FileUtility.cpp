@@ -138,3 +138,4 @@ task<ByteArray> HolographicEngine::Utility::ReadFileAsync(const wstring& fileNam
 	shared_ptr<wstring> SharedPtr = make_shared<wstring>(fileName);
 	return create_task([=] { return ReadFileHelperEx(SharedPtr); });
 }
+

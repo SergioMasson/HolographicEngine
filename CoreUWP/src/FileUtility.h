@@ -27,4 +27,24 @@ namespace HolographicEngine::Utility
 
 	// Same as previous except that it does not block but instead returns a task.
 	task<ByteArray> ReadFileAsync(const wstring& fileName);
+
+	// Function that reads from a binary file asynchronously.
+	inline ByteArray ReadDataUWP(const wstring& filename)
+	{
+		using namespace winrt::Windows::Storage;
+		using namespace Concurrency;
+
+		auto readBufferTask = PathIO::ReadBufferAsync(winrt::hstring(filename.c_str())).GetResults();
+
+		ByteArray returnBuffer;
+
+		returnBuffer->resize(readBufferTask.Length());
+
+		auto dataReader = Streams::DataReader::FromBuffer(readBufferTask);
+
+		dataReader.ReadBytes(*returnBuffer);
+
+		return returnBuffer;
+	}
+
 } // namespace Utility
