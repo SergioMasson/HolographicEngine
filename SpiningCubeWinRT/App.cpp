@@ -1,13 +1,15 @@
 #include "pch.h"
 #include "GameCore.h"
-#include "Vector"
+#include "VectorMath.h"
 #include "FileUtility.h"
 #include "Graphics/GraphicsCore.h"
+#include "SystemTime.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
 using namespace concurrency;
 using namespace HolographicEngine;
+using namespace DirectX;
 
 struct ModelConstantBuffer
 {
@@ -40,6 +42,7 @@ private:
 	bool m_loadingComplete = false;
 	bool m_usingVprtShaders = false;
 	int m_indexCount = 0;
+	float m_degreesPerSecond = 1;
 
 	// Direct3D resources for cube geometry.
 	// TODO(Sergio): Abstract all those thing away using the Engine API.
@@ -184,6 +187,41 @@ void SpiningCubeApp::Cleanup()
 void SpiningCubeApp::Update(float deltaT)
 {
 	//TODO: Add logic update here.
+
+	// Rotate the cube.
+	// Convert degrees to radians, then convert seconds to rotation angle.
+	const float    radiansPerSecond = XMConvertToRadians(m_degreesPerSecond);
+
+	auto totalTicks = HolographicEngine::SystemTime::GetCurrentTick();
+
+	auto totalMiliseconds = HolographicEngine::SystemTime::TicksToSeconds(totalTicks);
+
+	const double  totalRotation = totalMiliseconds * radiansPerSecond;
+
+	const float    radians = static_cast<float>(fmod(totalRotation, XM_2PI));
+	const XMMATRIX modelRotation = XMMatrixRotationY(-radians);
+
+	auto position = XMFLOAT3(0, 0, 0);
+
+	// Position the cube.
+	const XMMATRIX modelTranslation = XMMatrixTranslationFromVector(XMLoadFloat3(&position));
+
+	// Multiply to get the transform matrix.
+	// Note that this transform does not enforce a particular coordinate system. The calling
+	// class is responsible for rendering this content in a consistent manner.
+	const XMMATRIX modelTransform = XMMatrixMultiply(modelRotation, modelTranslation);
+
+	// The view and projection matrices are provided by the system; they are associated
+	// with holographic cameras, and updated on a per-camera basis.
+	// Here, we provide the model transform for the sample hologram. The model transform
+	// matrix is transposed to prepare it for the shader.
+	XMStoreFloat4x4(&m_modelConstantBufferData.model, XMMatrixTranspose(modelTransform));
+
+	// Use the D3D device context to update Direct3D device-based resources.
+	const auto context = HolographicEngine::Graphics::g_Context;
+
+	// Update the model transform buffer for the hologram.
+	context->UpdateSubresource(m_modelConstantBuffer.Get(), 0, nullptr, &m_modelConstantBufferData, 0, 0);
 }
 
 void SpiningCubeApp::RenderScene()
