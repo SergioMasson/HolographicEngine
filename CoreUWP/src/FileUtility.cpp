@@ -17,8 +17,6 @@
 #include <mutex>
 #include <zlib.h> // From NuGet package
 
-
-
 using namespace HolographicEngine::Utility;
 using namespace std;
 
@@ -139,3 +137,42 @@ task<ByteArray> HolographicEngine::Utility::ReadFileAsync(const wstring& fileNam
 	return create_task([=] { return ReadFileHelperEx(SharedPtr); });
 }
 
+ByteArray HolographicEngine::Utility::ReadFileUWPSync(const wstring& fileName)
+{
+	using namespace winrt::Windows::Storage;
+	using namespace Concurrency;
+
+	auto asyncReadTask = PathIO::ReadBufferAsync(winrt::hstring(fileName.c_str()));
+
+	while (asyncReadTask.Status() != winrt::Windows::Foundation::AsyncStatus::Completed && asyncReadTask.Status() != winrt::Windows::Foundation::AsyncStatus::Error)
+	{
+		continue;
+	}
+
+	auto readBufferTask = asyncReadTask.GetResults();
+
+	ByteArray returnBuffer = make_shared<vector<unsigned char>>();
+
+	returnBuffer->resize(readBufferTask.Length());
+
+	auto dataReader = Streams::DataReader::FromBuffer(readBufferTask);
+
+	dataReader.ReadBytes(*returnBuffer);
+
+	return returnBuffer;
+}
+
+//std::future<ByteArray> HolographicEngine::Utility::ReadDataAsync(const std::wstring_view & filename)
+//{
+//	using namespace winrt::Windows::Storage;
+//	using namespace winrt::Windows::Storage::Streams;
+//
+//	IBuffer fileBuffer = co_await PathIO::ReadBufferAsync(filename);
+//
+//	ByteArray returnBuffer;
+//	returnBuffer->resize(fileBuffer.Length());
+//
+//	DataReader::FromBuffer(fileBuffer).ReadBytes(winrt::array_view<uint8_t>(*returnBuffer));
+//
+//	return returnBuffer;
+//}

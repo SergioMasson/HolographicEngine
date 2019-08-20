@@ -17,7 +17,6 @@ using namespace winrt::Windows::ApplicationModel::Core;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::Graphics::Holographic;
 using namespace winrt::Windows::Perception::Spatial;
 using namespace std::placeholders;

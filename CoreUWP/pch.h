@@ -57,6 +57,7 @@
 #include <memory>
 #include <string>
 #include <exception>
+#include <future>
 
 #include "windows.h"
 #include <ppltasks.h>
