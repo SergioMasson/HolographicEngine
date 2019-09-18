@@ -1,11 +1,11 @@
 // Per-vertex data passed to the geometry shader.
 struct VertexShaderOutput
 {
-    min16float4 pos     : SV_POSITION;
-    min16float3 color   : COLOR0;
+	min16float4 pos     : SV_POSITION;
+	min16float3 color   : COLOR0;
 
-    // The render target array index will be set by the geometry shader.
-    uint        viewId  : TEXCOORD0;
+	// The render target array index will be set by the geometry shader.
+	uint        viewId  : TEXCOORD0;
 };
 
 // A constant buffer that stores the model transform.
@@ -36,12 +36,12 @@ VertexShaderOutput main(VertexShaderInput input)
 
 	// Note which view this vertex has been sent to. Used for matrix lookup.
 	// Taking the modulo of the instance ID allows geometry instancing to be used
-	// along with stereo instanced drawing; in that case, two copies of each 
+	// along with stereo instanced drawing; in that case, two copies of each
 	// instance would be drawn, one for left and one for right.
 	int idx = input.instId % 2;
 
 	// Transform the vertex position into world space.
-	pos = mul(pos, model);
+	//pos = mul(pos, model);
 
 	// Correct for perspective and project the vertex position onto the screen.
 	pos = mul(pos, viewProjection[idx]);
@@ -55,4 +55,3 @@ VertexShaderOutput main(VertexShaderInput input)
 
 	return output;
 }
-
