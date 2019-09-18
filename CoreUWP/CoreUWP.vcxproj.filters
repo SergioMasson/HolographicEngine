@@ -16,7 +16,7 @@
     <ClCompile Include="src\Math\Random.cpp" />
     <ClCompile Include="src\Input\GameInput.cpp" />
     <ClCompile Include="src\Graphics\GraphicsCore.cpp" />
-    <ClCompile Include="src\Graphics\StereographicCamera.cpp" />
+    <ClCompile Include="src\Graphics\StereographicCameraResource.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -42,7 +42,7 @@
     <ClInclude Include="src\Input\GameInput.h" />
     <ClInclude Include="src\Graphics\GraphicsCommon.h" />
     <ClInclude Include="src\Graphics\GraphicsCore.h" />
-    <ClInclude Include="src\Graphics\StereographicCamera.h" />
+    <ClInclude Include="src\Graphics\StereographicCameraResource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,21 +1,8 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// This code is licensed under the MIT License (MIT).
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-// Developed by Minigraph
-//
-// Author:  James Stanard
-//
-
 #pragma once
 
 #include "GraphicsCommon.h"
 #include "GameCore.h"
-#include "StereographicCamera.h"
+#include "StereographicCameraResource.h"
 #include "pch.h"
 
 namespace HolographicEngine::Graphics
@@ -38,9 +25,9 @@ namespace HolographicEngine::Graphics
 
 	void Present(winrt::Windows::Graphics::Holographic::HolographicFrame const& frame);
 
-	bool Render(GameCore::IGameApp& app, 
-				winrt::Windows::Graphics::Holographic::HolographicFrame const& frame,
-				winrt::Windows::Perception::Spatial::SpatialStationaryFrameOfReference const& m_stationaryReferenceFrame);
+	bool Render(GameCore::IGameApp& app,
+		winrt::Windows::Graphics::Holographic::HolographicFrame const& frame,
+		winrt::Windows::Perception::Spatial::SpatialStationaryFrameOfReference const& m_stationaryReferenceFrame);
 
 	extern uint32_t g_DisplayWidth;
 	extern uint32_t g_DisplayHeight;
@@ -87,7 +74,6 @@ namespace HolographicEngine::Graphics
 
 	//extern BoolVar s_EnableVSync;
 	//extern EnumVar TargetResolution;
-
 
 #if defined(_DEBUG)
 // Check for SDK Layer support.

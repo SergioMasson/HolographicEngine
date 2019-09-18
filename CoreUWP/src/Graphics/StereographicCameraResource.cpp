@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "StereographicCamera.h"
+#include "StereographicCameraResource.h"
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
@@ -9,10 +9,9 @@ using namespace winrt::Windows::Graphics::Holographic;
 using namespace winrt::Windows::Perception::Spatial;
 using namespace Windows::Graphics::DirectX::Direct3D11;
 
-
 namespace HolographicEngine::Graphics
 {
-	StereographicCamera::StereographicCamera(HolographicCamera const& camera) :
+	StereographicCameraResource::StereographicCameraResource(HolographicCamera const& camera) :
 		m_holographicCamera(camera),
 		m_isStereo(camera.IsStereo()),
 		m_d3dRenderTargetSize(camera.RenderTargetSize())
@@ -23,10 +22,9 @@ namespace HolographicEngine::Graphics
 	// Updates resources associated with a holographic camera's swap chain.
 	// The app does not access the swap chain directly, but it does create
 	// resource views for the back buffer.
-	void StereographicCamera::CreateResourcesForBackBuffer(ID3D11Device* device, HolographicCameraRenderingParameters const& cameraParameters)
+	void StereographicCameraResource::CreateResources(ID3D11Device* device, HolographicCameraRenderingParameters const& cameraParameters)
 	{
 		// Get the WinRT object representing the holographic camera's back buffer.
-		// TODO(Sergio): What does this method actual returns ?
 		IDirect3DSurface surface = cameraParameters.Direct3D11BackBuffer();
 
 		// Get the holographic camera's back buffer.
@@ -103,7 +101,7 @@ namespace HolographicEngine::Graphics
 	}
 
 	// Releases resources associated with a back buffer.
-	void StereographicCamera::ReleaseResourcesForBackBuffer(ID3D11DeviceContext* context)
+	void StereographicCameraResource::ReleaseResources(ID3D11DeviceContext* context)
 	{
 		// Release camera-specific resources.
 		m_d3dBackBuffer.Reset();
@@ -124,7 +122,7 @@ namespace HolographicEngine::Graphics
 	}
 
 	// Based on the new camera pose, update the view-projection matrix and viewport for both eyes and their const buffer.
-	void StereographicCamera::UpdateViewProjectionBuffer(ID3D11DeviceContext* context, HolographicCameraPose const& cameraPose, SpatialCoordinateSystem const& coordinateSystem)
+	void StereographicCameraResource::UpdateViewProjection(ID3D11DeviceContext* context, HolographicCameraPose const& cameraPose, SpatialCoordinateSystem const& coordinateSystem)
 	{
 		// The system changes the viewport on a per-frame basis for system optimizations.
 		auto viewport = cameraPose.Viewport();
@@ -192,7 +190,7 @@ namespace HolographicEngine::Graphics
 
 	// Try to Get the view-projection constant buffer for the HolographicCamera and attaches it
 	// to the shader pipeline.
-	bool StereographicCamera::AttachViewProjectionBuffer(ID3D11DeviceContext* context)
+	bool StereographicCameraResource::AttachViewProjection(ID3D11DeviceContext* context)
 	{
 		// Loading is asynchronous. Resources must be created before they can be updated.
 		// Cameras can also be added asynchronously, in which case they must be initialized
@@ -224,4 +222,3 @@ namespace HolographicEngine::Graphics
 		return true;
 	}
 }
-

@@ -89,7 +89,6 @@ namespace HolographicEngine::GameCore
 			Graphics::Present(holographicFrame);
 		}
 
-
 		//	PostEffects::Render();
 
 		//	if (TestGenerateMips)
@@ -136,7 +135,7 @@ namespace HolographicEngine::GameCore
 	{
 	public:
 		App() {}
-
+		~App();
 		// IFrameworkView Methods.
 		virtual void Initialize(CoreApplicationView const& applicationView);
 		virtual void Load(winrt::hstring const& entryPoint);
@@ -179,19 +178,25 @@ namespace HolographicEngine::GameCore
 		// Used to respond to changes to the default spatial locator.
 		void OnHolographicDisplayIsAvailableChanged(IInspectable const&, IInspectable const&);
 
+		void UnregisterHolographicEventHandlers();
 
 	private:
 		bool m_windowClosed;
 		bool m_windowVisible;
-		bool m_canGetDefaultHolographicDisplay		= false;
-		bool m_canGetHolographicDisplayForCamera	= false;
-		bool m_canCommitDirect3D11DepthBuffer		= false;
+		bool m_canGetDefaultHolographicDisplay = false;
+		bool m_canGetHolographicDisplayForCamera = false;
+		bool m_canCommitDirect3D11DepthBuffer = false;
 
 		//Windows runtime object are just a reference to the actual object itself. They can be copied!
 		HolographicSpace					m_holographicSpace{ nullptr };
 		SpatialLocator						m_spatialLocator{ nullptr };
 		SpatialStationaryFrameOfReference	m_stationaryReferenceFrame{ nullptr };
-		
+
+		winrt::event_token                                          m_cameraAddedToken;
+		winrt::event_token                                          m_cameraRemovedToken;
+		winrt::event_token                                          m_locatabilityChangedToken;
+		winrt::event_token                                          m_holographicDisplayIsAvailableChangedEventToken;
+
 		volatile bool m_IsRunning;
 		volatile bool m_IsCapturingPointer;
 		float m_PointerX, m_PointerY;
@@ -207,6 +212,29 @@ namespace HolographicEngine::GameCore
 		m_canCommitDirect3D11DepthBuffer = winrt::Windows::Foundation::Metadata::ApiInformation::IsMethodPresent(L"Windows.Graphics.Holographic.HolographicCameraRenderingParameters", L"CommitDirect3D11DepthBuffer");
 	}
 
+	void App::UnregisterHolographicEventHandlers()
+	{
+		if (m_holographicSpace != nullptr)
+		{
+			// Clear previous event registrations.
+			m_holographicSpace.CameraAdded(m_cameraAddedToken);
+			m_cameraAddedToken = {};
+			m_holographicSpace.CameraRemoved(m_cameraRemovedToken);
+			m_cameraRemovedToken = {};
+		}
+
+		if (m_spatialLocator != nullptr)
+		{
+			m_spatialLocator.LocatabilityChanged(m_locatabilityChangedToken);
+		}
+	}
+
+	App::~App()
+	{
+		UnregisterHolographicEventHandlers();
+		HolographicSpace::IsAvailableChanged(m_holographicDisplayIsAvailableChangedEventToken);
+	}
+
 	// Called when we are provided a window.
 	void App::SetWindow(CoreWindow const& window)
 	{
@@ -216,6 +244,8 @@ namespace HolographicEngine::GameCore
 
 		LoadApplication(*m_game);
 
+		UnregisterHolographicEventHandlers();
+
 		m_holographicSpace = HolographicSpace::CreateForCoreWindow(window);
 
 		//m_holographicSpace = std::shared_ptr<HolographicSpace>(&HolographicSpace::CreateForCoreWindow(window));
@@ -223,10 +253,10 @@ namespace HolographicEngine::GameCore
 		//Holographic Space can only be created after the app has a CoreWindow.
 		Graphics::AttachHolographicSpace(m_holographicSpace);
 
-		m_holographicSpace.CameraAdded(std::bind(&App::OnCameraAdded, this, _1, _2));
-		m_holographicSpace.CameraRemoved(std::bind(&App::OnCameraRemoved, this, _1, _2));
+		m_cameraAddedToken = m_holographicSpace.CameraAdded(std::bind(&App::OnCameraAdded, this, _1, _2));
+		m_cameraRemovedToken = m_holographicSpace.CameraRemoved(std::bind(&App::OnCameraRemoved, this, _1, _2));
 
-		HolographicSpace::IsAvailableChanged(std::bind(&App::OnHolographicDisplayIsAvailableChanged, this, _1, _2));
+		m_holographicDisplayIsAvailableChangedEventToken = HolographicSpace::IsAvailableChanged(std::bind(&App::OnHolographicDisplayIsAvailableChanged, this, _1, _2));
 
 		OnHolographicDisplayIsAvailableChanged(nullptr, nullptr);
 
@@ -334,14 +364,14 @@ namespace HolographicEngine::GameCore
 		GameInput::SetKeyState(args.VirtualKey(), false);
 	}
 
-// Holographic API callback ----------------------------
+	// Holographic API callback ----------------------------
 
 	void App::OnCameraAdded(HolographicSpace const & sender, HolographicSpaceCameraAddedEventArgs const & args)
 	{
 		winrt::Windows::Foundation::Deferral deferral = args.GetDeferral();
 		HolographicCamera holographicCamera = args.Camera();
 
-		concurrency::create_task([this, deferral,  holographicCamera]()
+		concurrency::create_task([this, deferral, holographicCamera]()
 		{
 			//
 			// TODO: Allocate resources for the new camera and load any content specific to
@@ -375,8 +405,7 @@ namespace HolographicEngine::GameCore
 	{
 		switch (sender.Locatability())
 		{
-
-		// Holograms cannot be rendered.
+			// Holograms cannot be rendered.
 		case SpatialLocatability::Unavailable:
 		{
 			Utility::Printf(L"Warning! Positional tracking is SpatialLocatability::Unavailable \n");
@@ -405,7 +434,7 @@ namespace HolographicEngine::GameCore
 	void App::OnHolographicDisplayIsAvailableChanged(IInspectable const &, IInspectable const &)
 	{
 		// Get the spatial locator for the default HolographicDisplay, if one is available.
-		SpatialLocator spatialLocator{ nullptr };
+		SpatialLocator spatialLocator = nullptr;
 
 		if (m_canGetDefaultHolographicDisplay)
 		{
@@ -425,7 +454,7 @@ namespace HolographicEngine::GameCore
 			// based on it.
 			if (m_spatialLocator != nullptr)
 			{
-				//TODO: Do we need to unbind ?
+				m_spatialLocator.LocatabilityChanged(m_locatabilityChangedToken);
 				m_spatialLocator = nullptr;
 			}
 
@@ -436,16 +465,17 @@ namespace HolographicEngine::GameCore
 				// Use the SpatialLocator from the default HolographicDisplay to track the motion of the device.
 				m_spatialLocator = spatialLocator;
 
-				m_spatialLocator.LocatabilityChanged(std::bind(&App::OnLocatabilityChanged, this, _1, _2));
+				// Respond to changes in the positional tracking state.
+				m_locatabilityChangedToken = m_spatialLocator.LocatabilityChanged(std::bind(&App::OnLocatabilityChanged, this, _1, _2));
 
-			//	// The simplest way to render world-locked holograms is to create a stationary reference frame
-			//	// based on a SpatialLocator. This is roughly analogous to creating a "world" coordinate system
-			//	// with the origin placed at the device's position as the app is launched.
+				// The simplest way to render world-locked holograms is to create a stationary reference frame
+				// based on a SpatialLocator. This is roughly analogous to creating a "world" coordinate system
+				// with the origin placed at the device's position as the app is launched.
 				m_stationaryReferenceFrame = m_spatialLocator.CreateStationaryFrameOfReferenceAtCurrentLocation();
 			}
 		}
 	}
-// ------------------------------------------------------------------------
+	// ------------------------------------------------------------------------
 
 	void RunApplication(IGameApp& app, const wchar_t* className)
 	{

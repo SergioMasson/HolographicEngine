@@ -2,7 +2,6 @@
 
 namespace HolographicEngine::Graphics
 {
-
 	// Constant buffer used to send the view-projection matrices to the shader pipeline.
 	struct ViewProjectionConstantBuffer
 	{
@@ -14,28 +13,29 @@ namespace HolographicEngine::Graphics
 
 	// Manages DirectX device resources that are specific to a holographic camera, such as the
 	// back buffer, ViewProjection constant buffer, and viewport.
-	class StereographicCamera
+	class StereographicCameraResource
 	{
 	public:
-		StereographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& holographicCamera);
+		StereographicCameraResource(winrt::Windows::Graphics::Holographic::HolographicCamera const& holographicCamera);
 
 		//Creates backbuffer resources for rendering.
-		void CreateResourcesForBackBuffer(ID3D11Device* deviceResources,
+		void CreateResources(
+			ID3D11Device* deviceResources,
 			winrt::Windows::Graphics::Holographic::HolographicCameraRenderingParameters const& cameraParameters
 		);
 
 		// Releases resources associated with a back buffer.
-		void ReleaseResourcesForBackBuffer(ID3D11DeviceContext* deviceResources);
+		void ReleaseResources(ID3D11DeviceContext* deviceResources);
 
 		// Updates the view/projection constant buffer for a holographic camera.
-		void UpdateViewProjectionBuffer(
+		void UpdateViewProjection(
 			ID3D11DeviceContext* deviceResources,
 			winrt::Windows::Graphics::Holographic::HolographicCameraPose const& cameraPose,
 			winrt::Windows::Perception::Spatial::SpatialCoordinateSystem const& coordinateSystem);
 
 		// Gets the view-projection constant buffer for the HolographicCamera and attaches it
 		// to the shader pipeline.
-		bool AttachViewProjectionBuffer(ID3D11DeviceContext* deviceResources);
+		bool AttachViewProjection(ID3D11DeviceContext* deviceResources);
 
 		// Direct3D device resources.
 		ID3D11RenderTargetView* GetRenderTargetView()     const { return m_d3dRenderTargetView.Get(); }
