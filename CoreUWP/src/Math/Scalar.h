@@ -14,7 +14,7 @@ namespace HolographicEngine::Math
 	class Scalar
 	{
 	public:
-		INLINE Scalar() {}
+		INLINE Scalar() : m_vec() {}
 		INLINE Scalar(const Scalar& s) { m_vec = s; }
 		INLINE Scalar(float f) { m_vec = XMVectorReplicate(f); }
 		INLINE explicit Scalar(FXMVECTOR vec) { m_vec = vec; }

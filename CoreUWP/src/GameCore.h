@@ -13,6 +13,9 @@ namespace HolographicEngine::GameCore
 		virtual void Startup(void) = 0;
 		virtual void Cleanup(void) = 0;
 
+		virtual void Suspend(void) = 0;
+		virtual void Resume(void) = 0;
+
 		// Decide if you want the app to exit.  By default, app continues until the 'ESC' key is pressed.
 		virtual bool IsDone(void);
 
@@ -33,10 +36,9 @@ namespace HolographicEngine::GameCore
 #define MAIN_FUNCTION() int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 
 #define CREATE_APPLICATION( app_class ) \
-    MAIN_FUNCTION() \
-    { \
-        HolographicEngine::GameCore::IGameApp* app = new app_class(); \
-        HolographicEngine::GameCore::RunApplication( *app, L#app_class ); \
-        delete app; \
-        return 0; } \
-    
+	MAIN_FUNCTION() \
+	{ \
+		HolographicEngine::GameCore::IGameApp* app = new app_class(); \
+		HolographicEngine::GameCore::RunApplication( *app, L#app_class ); \
+		delete app; \
+		return 0; } \

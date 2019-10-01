@@ -51,6 +51,16 @@ namespace HolographicEngine::GameCore
 		game.Startup();
 	}
 
+	void SuspendApplication(IGameApp& game)
+	{
+		game.Suspend();
+	}
+
+	void ResumeApplication(IGameApp& game)
+	{
+		game.Resume();
+	}
+
 	void TerminateApplication(IGameApp& game)
 	{
 		game.Cleanup();
@@ -196,6 +206,8 @@ namespace HolographicEngine::GameCore
 		winrt::event_token                                          m_cameraRemovedToken;
 		winrt::event_token                                          m_locatabilityChangedToken;
 		winrt::event_token                                          m_holographicDisplayIsAvailableChangedEventToken;
+		winrt::event_token                                          m_suspendingEventToken;
+		winrt::event_token                                          m_resumingEventToken;
 
 		volatile bool m_IsRunning;
 		volatile bool m_IsCapturingPointer;
@@ -206,6 +218,10 @@ namespace HolographicEngine::GameCore
 	void App::Initialize(CoreApplicationView const& applicationView)
 	{
 		applicationView.Activated(std::bind(&App::OnActivated, this, _1, _2));
+
+		// Register event handlers for app lifecycle.
+		m_suspendingEventToken = CoreApplication::Suspending(bind(&App::OnSuspending, this, _1, _2));
+		m_resumingEventToken = CoreApplication::Resuming(bind(&App::OnResuming, this, _1, _2));
 
 		m_canGetHolographicDisplayForCamera = winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(L"Windows.Graphics.Holographic.HolographicCamera", L"Display");
 		m_canGetDefaultHolographicDisplay = winrt::Windows::Foundation::Metadata::ApiInformation::IsMethodPresent(L"Windows.Graphics.Holographic.HolographicDisplay", L"GetDefault");
@@ -302,9 +318,34 @@ namespace HolographicEngine::GameCore
 		m_IsCapturingPointer = false;
 	}
 
-	void App::OnSuspending(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::ApplicationModel::SuspendingEventArgs const& args) {}
+	void App::OnSuspending(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::ApplicationModel::SuspendingEventArgs const& args)
+	{
+		// Save app state asynchronously after requesting a deferral. Holding a deferral
+		// indicates that the application is busy performing suspending operations. Be
+		// aware that a deferral may not be held indefinitely; after about five seconds,
+		// the app will be forced to exit.
+		SuspendingDeferral deferral = args.SuspendingOperation().GetDeferral();
 
-	void App::OnResuming(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::Foundation::IInspectable const& args) {}
+		Concurrency::create_task([this, deferral]()
+			{
+				Graphics::Trim();
+
+				if (m_game != nullptr)
+					SuspendApplication(*m_game);
+
+				deferral.Complete();
+			});
+	}
+
+	void App::OnResuming(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::Foundation::IInspectable const& args)
+	{
+		// Restore any data or state that was unloaded on suspend. By default, data
+		// and state are persisted when resuming from suspend. Note that this event
+		// does not occur if the app was previously terminated.
+
+		if (m_game != nullptr)
+			ResumeApplication(*m_game);
+	}
 
 	void App::OnWindowSizeChanged(CoreWindow const& sender, WindowSizeChangedEventArgs const& args)
 	{
@@ -366,42 +407,42 @@ namespace HolographicEngine::GameCore
 
 	// Holographic API callback ----------------------------
 
-	void App::OnCameraAdded(HolographicSpace const & sender, HolographicSpaceCameraAddedEventArgs const & args)
+	void App::OnCameraAdded(HolographicSpace const& sender, HolographicSpaceCameraAddedEventArgs const& args)
 	{
 		winrt::Windows::Foundation::Deferral deferral = args.GetDeferral();
 		HolographicCamera holographicCamera = args.Camera();
 
 		concurrency::create_task([this, deferral, holographicCamera]()
-		{
-			//
-			// TODO: Allocate resources for the new camera and load any content specific to
-			//       that camera. Note that the render target size (in pixels) is a property
-			//       of the HolographicCamera object, and can be used to create off-screen
-			//       render targets that match the resolution of the HolographicCamera.
-			//
+			{
+				//
+				// TODO: Allocate resources for the new camera and load any content specific to
+				//       that camera. Note that the render target size (in pixels) is a property
+				//       of the HolographicCamera object, and can be used to create off-screen
+				//       render targets that match the resolution of the HolographicCamera.
+				//
 
-			// Create device-based resources for the holographic camera and add it to the list of
-			// cameras used for updates and rendering. Notes:
-			//   * Since this function may be called at any time, the AddHolographicCamera function
-			//     waits until it can get a lock on the set of holographic camera resources before
-			//     adding the new camera. At 60 frames per second this wait should not take long.
-			//   * A subsequent Update will take the back buffer from the RenderingParameters of this
-			//     camera's CameraPose and use it to create the ID3D11RenderTargetView for this camera.
-			//     Content can then be rendered for the HolographicCamera.
-			Graphics::AddHolographicCamera(holographicCamera);
+				// Create device-based resources for the holographic camera and add it to the list of
+				// cameras used for updates and rendering. Notes:
+				//   * Since this function may be called at any time, the AddHolographicCamera function
+				//     waits until it can get a lock on the set of holographic camera resources before
+				//     adding the new camera. At 60 frames per second this wait should not take long.
+				//   * A subsequent Update will take the back buffer from the RenderingParameters of this
+				//     camera's CameraPose and use it to create the ID3D11RenderTargetView for this camera.
+				//     Content can then be rendered for the HolographicCamera.
+				Graphics::AddHolographicCamera(holographicCamera);
 
-			// Holographic frame predictions will not include any information about this camera until
-			// the deferral is completed.
-			deferral.Complete();
-		});
+				// Holographic frame predictions will not include any information about this camera until
+				// the deferral is completed.
+				deferral.Complete();
+			});
 	}
 
-	void App::OnCameraRemoved(HolographicSpace const & sender, HolographicSpaceCameraRemovedEventArgs const & args)
+	void App::OnCameraRemoved(HolographicSpace const& sender, HolographicSpaceCameraRemovedEventArgs const& args)
 	{
 		Graphics::RemoveHolographicCamera(args.Camera());
 	}
 
-	void App::OnLocatabilityChanged(SpatialLocator const & sender, IInspectable const & args)
+	void App::OnLocatabilityChanged(SpatialLocator const& sender, IInspectable const& args)
 	{
 		switch (sender.Locatability())
 		{
@@ -431,7 +472,7 @@ namespace HolographicEngine::GameCore
 		}
 	}
 
-	void App::OnHolographicDisplayIsAvailableChanged(IInspectable const &, IInspectable const &)
+	void App::OnHolographicDisplayIsAvailableChanged(IInspectable const&, IInspectable const&)
 	{
 		// Get the spatial locator for the default HolographicDisplay, if one is available.
 		SpatialLocator spatialLocator = nullptr;

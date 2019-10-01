@@ -20,11 +20,14 @@ namespace HolographicEngine::Math
 	__declspec(align(16)) class Matrix4
 	{
 	public:
-		INLINE Matrix4() {}
+		INLINE Matrix4() : m_mat() {}
+
 		INLINE Matrix4(Vector3 x, Vector3 y, Vector3 z, Vector3 w)
 		{
-			m_mat.r[0] = SetWToZero(x); m_mat.r[1] = SetWToZero(y);
-			m_mat.r[2] = SetWToZero(z); m_mat.r[3] = SetWToOne(w);
+			m_mat.r[0] = SetWToZero(x);
+			m_mat.r[1] = SetWToZero(y);
+			m_mat.r[2] = SetWToZero(z);
+			m_mat.r[3] = SetWToOne(w);
 		}
 		INLINE Matrix4(Vector4 x, Vector4 y, Vector4 z, Vector4 w) { m_mat.r[0] = x; m_mat.r[1] = y; m_mat.r[2] = z; m_mat.r[3] = w; }
 		INLINE Matrix4(const Matrix4& mat) { m_mat = mat.m_mat; }
@@ -48,7 +51,7 @@ namespace HolographicEngine::Math
 		INLINE explicit Matrix4(EIdentityTag) { m_mat = XMMatrixIdentity(); }
 		INLINE explicit Matrix4(EZeroTag) { m_mat.r[0] = m_mat.r[1] = m_mat.r[2] = m_mat.r[3] = SplatZero(); }
 
-		INLINE const Matrix3& Get3x3() const { return (const Matrix3&)* this; }
+		INLINE const Matrix3& Get3x3() const { return (const Matrix3&)*this; }
 
 		INLINE Vector4 GetX() const { return Vector4(m_mat.r[0]); }
 		INLINE Vector4 GetY() const { return Vector4(m_mat.r[1]); }

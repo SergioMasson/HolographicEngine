@@ -25,7 +25,7 @@ namespace HolographicEngine::Math
 	{
 	public:
 
-		INLINE Vector3() {}
+		INLINE Vector3() : m_vec() {}
 		INLINE Vector3(float x, float y, float z) { m_vec = XMVectorSet(x, y, z, z); }
 		INLINE Vector3(const XMFLOAT3& v) { m_vec = XMLoadFloat3(&v); }
 		INLINE Vector3(const Vector3& v) { m_vec = v; }
@@ -75,7 +75,7 @@ namespace HolographicEngine::Math
 	class Vector4
 	{
 	public:
-		INLINE Vector4() {}
+		INLINE Vector4() : m_vec() {}
 		INLINE Vector4(float x, float y, float z, float w) { m_vec = XMVectorSet(x, y, z, w); }
 		INLINE Vector4(Vector3 xyz, float w) { m_vec = XMVectorSetW(xyz, w); }
 		INLINE Vector4(const Vector4& v) { m_vec = v; }

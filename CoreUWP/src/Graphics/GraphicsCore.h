@@ -20,6 +20,7 @@ namespace HolographicEngine::Graphics
 	void RemoveHolographicCamera(winrt::Windows::Graphics::Holographic::HolographicCamera const& camera);
 
 	void Resize(uint32_t width, uint32_t height);
+	void Trim();
 	void Terminate(void);
 	void Shutdown(void);
 

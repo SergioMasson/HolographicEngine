@@ -30,7 +30,7 @@ namespace
 
 namespace HolographicEngine::Graphics
 {
-	ID3D11Device*		 g_Device;
+	ID3D11Device* g_Device;
 	ID3D11DeviceContext* g_Context;
 	bool				 g_supportsVprt;
 }
@@ -41,6 +41,8 @@ ComPtr<IDXGIAdapter>                   g_dxgiAdapter;
 
 ComPtr<ID2D1Factory>                   g_d2dFactory;
 ComPtr<IDWriteFactory>                 g_dwriteFactory;
+ComPtr<ID3D11Device>                   g_d3dDevice;
+ComPtr<ID3D11DeviceContext>            g_d3dContext;
 
 bool								   g_canGetHolographicDisplayForCamera;
 bool								   g_canCommitDirect3D11DepthBuffer;
@@ -94,9 +96,6 @@ void CreateDeviceResources()
 		D3D_FEATURE_LEVEL_10_0
 	};
 
-	ComPtr<ID3D11Device>                   g_d3dDevice;
-	ComPtr<ID3D11DeviceContext>            g_d3dContext;
-
 	D3D_DRIVER_TYPE driverType = g_dxgiAdapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN;
 
 	HRESULT hr = D3D11CreateDevice(
@@ -136,7 +135,7 @@ void CreateDeviceResources()
 
 	// Wrap the native device using a WinRT interop object.
 	winrt::com_ptr<::IInspectable> object;
-	winrt::check_hresult(CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.Get(), reinterpret_cast<IInspectable **>(winrt::put_abi(object))));
+	winrt::check_hresult(CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.Get(), reinterpret_cast<IInspectable**>(winrt::put_abi(object))));
 
 	g_winRTD3DDevice = object.as<IDirect3DDevice>();
 
@@ -153,8 +152,8 @@ void CreateDeviceResources()
 	if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
 		HolographicEngine::Graphics::g_supportsVprt = true;
 
-	HolographicEngine::Graphics::g_Device = g_d3dDevice.Detach();
-	HolographicEngine::Graphics::g_Context = g_d3dContext.Detach();
+	HolographicEngine::Graphics::g_Device = g_d3dDevice.Get();
+	HolographicEngine::Graphics::g_Context = g_d3dContext.Get();
 }
 
 // Recreate all device resources and set them back to the current state.
@@ -172,6 +171,17 @@ void HolographicEngine::Graphics::Initialize(void)
 	CreateDeviceResources();
 }
 
+// Call this method when the app suspends. It provides a hint to the driver that the app
+// is entering an idle state and that temporary buffers can be reclaimed for use by other apps.
+void HolographicEngine::Graphics::Trim(void)
+{
+	g_d3dContext->ClearState();
+
+	ComPtr<IDXGIDevice3> dxgiDevice;
+	winrt::check_hresult(g_d3dDevice.As(&dxgiDevice));
+	dxgiDevice->Trim();
+}
+
 void HolographicEngine::Graphics::AttachHolographicSpace(HolographicSpace const& space)
 {
 	//Create a Holographic space for this window.
@@ -182,12 +192,11 @@ void HolographicEngine::Graphics::AddHolographicCamera(winrt::Windows::Graphics:
 {
 	{
 		std::lock_guard<std::mutex> guard(g_cameraResourcesLock);
-
 		g_cameraResources[camera.Id()] = std::make_unique<StereographicCameraResource>(camera);
 	}
 }
 
-void HolographicEngine::Graphics::EnsureHolographicCameraResources(winrt::Windows::Graphics::Holographic::HolographicFrame const & frame, winrt::Windows::Graphics::Holographic::HolographicFramePrediction const & prediction)
+void HolographicEngine::Graphics::EnsureHolographicCameraResources(winrt::Windows::Graphics::Holographic::HolographicFrame const& frame, winrt::Windows::Graphics::Holographic::HolographicFramePrediction const& prediction)
 {
 	{
 		std::lock_guard<std::mutex> guard(g_cameraResourcesLock);
@@ -326,7 +335,7 @@ bool HolographicEngine::Graphics::Render(GameCore::IGameApp& app, HolographicFra
 
 					winrt::com_ptr<::IInspectable> object;
 
-					winrt::check_hresult(CreateDirect3D11SurfaceFromDXGISurface(depthDxgiSurface.Get(), reinterpret_cast<IInspectable **>(winrt::put_abi(object))));
+					winrt::check_hresult(CreateDirect3D11SurfaceFromDXGISurface(depthDxgiSurface.Get(), reinterpret_cast<IInspectable**>(winrt::put_abi(object))));
 
 					IDirect3DSurface depthD3DSurface = object.as<IDirect3DSurface>();
 

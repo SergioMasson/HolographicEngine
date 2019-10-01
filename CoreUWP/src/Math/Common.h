@@ -152,7 +152,7 @@ namespace HolographicEngine::Math
 
 #endif
 
-	enum EZeroTag { kZero, kOrigin };
+	enum  EZeroTag { kZero, kOrigin };
 	enum EIdentityTag { kOne, kIdentity };
 	enum EXUnitVector { kXUnitVector };
 	enum EYUnitVector { kYUnitVector };

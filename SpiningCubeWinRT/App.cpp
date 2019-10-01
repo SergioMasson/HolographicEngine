@@ -38,6 +38,10 @@ public:
 	virtual void Update(float deltaT) override;
 	virtual void RenderScene(void) override;
 
+	virtual void Suspend(void) override;
+
+	virtual void Resume(void) override;
+
 private:
 	bool m_loadingComplete = false;
 	bool m_usingVprtShaders = false;
@@ -180,6 +184,16 @@ void SpiningCubeApp::Startup()
 }
 
 void SpiningCubeApp::Cleanup()
+{
+	//TODO: Add resource release code here.
+}
+
+void SpiningCubeApp::Suspend()
+{
+	//TODO: Add resource release code here.
+}
+
+void SpiningCubeApp::Resume()
 {
 	//TODO: Add resource release code here.
 }
